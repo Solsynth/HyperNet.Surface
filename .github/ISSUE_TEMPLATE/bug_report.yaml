@@ -3,6 +3,11 @@ description: Create a report to help us address issues you are facing
 title: "[Bug] "
 labels: [Bug]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to make us better!
+
   - type: checkboxes
     id: duplication
     attributes:
@@ -40,7 +45,7 @@ body:
       description: Steps to reproduce the bug
       placeholder: |
         Example:
-          1. Change "Present HyperNet Server" in "Network" settings
+          1. Change "HyperNet Server" to "127.0.1" in "Network" settings
           2. Restart the app
           3. Crash
     validations:
