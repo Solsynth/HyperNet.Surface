@@ -20,6 +20,10 @@ struct ChatView: View {
     /// The room-list load. Stored (not `.task`) so it isn't cancelled when the
     /// view disappears (panel switch), which left the list empty.
     @State private var loadTask: Task<Void, Never>?
+    /// True while the network fetch is blocked waiting for auth to resolve.
+    /// Kept separate from `isLoading` so a cached room list stays visible
+    /// rather than flashing the empty state during cold-start token refresh.
+    @State private var isAwaitingAuth = false
     
     private let tabs = [L10n.chatTabAll, L10n.chatTabDirect, L10n.chatTabGroup]
     
@@ -27,7 +31,7 @@ struct ChatView: View {
         TabView(selection: $selectedTab) {
             ForEach(0..<tabs.count, id: \.self) { index in
                 VStack {
-                    if isLoading {
+                    if isLoading || (isAwaitingAuth && chatRooms.isEmpty) {
                         ProgressView()
                     } else if error != nil {
                         VStack {
@@ -121,13 +125,40 @@ struct ChatView: View {
         }
     }
     
+    /// A stable error shown when auth never resolves, so the room list offers
+    /// a retry instead of silently rendering the "no chats" empty state.
+    private func loadAuthError() -> NSError {
+        NSError(
+            domain: "ChatView",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: L10n.chatErrorLoading]
+        )
+    }
+
     private func loadChatRooms() async {
         // Await credentials (the first `.task` can run before auth resolves).
+        // Show the spinner (not the empty state) while we wait. If sign-in is
+        // required (terminal refresh failure) bail so the sign-in flow takes
+        // over; if auth still hasn't resolved after a generous window, surface
+        // a retryable error instead of an empty list.
+        isAwaitingAuth = true
+        defer { isAwaitingAuth = false }
+
+        var waited = 0
         while appState.token == nil || appState.serverUrl == nil {
+            if appState.requiresSignIn { return }
+            if waited >= 60 {
+                self.error = chatRooms.isEmpty ? loadAuthError() : nil
+                return
+            }
             try? await Task.sleep(for: .milliseconds(250))
             if Task.isCancelled { return }
+            waited += 1
         }
-        guard let token = appState.token, let serverUrl = appState.serverUrl else { return }
+        guard let token = appState.token, let serverUrl = appState.serverUrl else {
+            self.error = chatRooms.isEmpty ? loadAuthError() : nil
+            return
+        }
         
         print("[ChatView] loadChatRooms - token: \(token.prefix(10))..., serverUrl: \(serverUrl)")
         isLoading = true

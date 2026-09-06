@@ -1068,6 +1068,36 @@ struct SnAccount: Codable {
     }
 }
 
+/// A JSON string-or-number scalar. Some server edges serialize numeric
+/// fields as strings ("3600") and others as numbers (3600); decoding a
+/// `String` into `Int` throws and takes the whole enclosing model down. Money
+/// fields (e.g. `base_price`/`final_price`) are such a case on
+/// `/accounts/me`. This wrapper accepts either form and preserves the raw
+/// text/value for display or conversion.
+struct FlexibleString: Codable, Equatable {
+    let value: String
+
+    init(_ value: String) { self.value = value }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let s = try? container.decode(String.self) {
+            value = s
+        } else if let i = try? container.decode(Int.self) {
+            value = String(i)
+        } else if let d = try? container.decode(Double.self) {
+            value = String(d)
+        } else {
+            value = ""
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(value)
+    }
+}
+
 struct SnWalletSubscriptionRef: Codable {
     let id: String?
     let identifier: String?
@@ -1084,8 +1114,8 @@ struct SnWalletSubscriptionRef: Codable {
     let isAvailable: Bool?
     let isFreeTrial: Bool?
     let status: Int?
-    let basePrice: Int?
-    let finalPrice: Int?
+    let basePrice: FlexibleString?
+    let finalPrice: FlexibleString?
     let renewalAt: Date?
     let accountId: String?
     let createdAt: Date?

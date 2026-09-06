@@ -27,53 +27,23 @@ class AppState: ObservableObject {
     let networkService = NetworkService()
     let standaloneAuth = StandaloneAuthService.shared
 
-    private var wcService = WatchConnectivityService()
-    private var cancellables = Set<AnyCancellable>()
     private var hasAttemptedConnection = false
 
     init() {
-        // If a standalone (device-flow) session exists it wins: the watch is
-        // usable with no iPhone nearby.
+        // The watch authenticates entirely on its own through the OAuth device
+        // flow (see SignInView / StandaloneAuthService). It never borrows
+        // credentials from the paired iPhone, so a stored standalone session is
+        // the only credential source.
         if standaloneAuth.hasStoredSession, let url = standaloneAuth.serverUrl {
-            token = "" // placeholder; real token fetched via refresh below
             serverUrl = url
             requiresSignIn = false
-        } else {
-            requiresSignIn = true
-        }
-
-        wcService.$token
-            .combineLatest(wcService.$serverUrl, wcService.$isFetched, wcService.$errorMessage)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] (token: String?, serverUrl: String?, isFetched: Bool?, errorMessage: String?) in
-                guard let self = self else { return }
-
-                // Phone credentials only fill the gap when there is no
-                // standalone session.
-                if self.standaloneAuth.hasStoredSession {
-                    return
-                }
-
-                self.token = token
-                self.serverUrl = serverUrl
-                self.errorMessage = errorMessage
-
-                if let token = token, let serverUrl = serverUrl, !token.isEmpty, !serverUrl.isEmpty {
-                    self.isReady = true
-                    self.requiresSignIn = false
-                    self.connectOnce(token: token, serverUrl: serverUrl, fromPhone: isFetched == true)
-                } else {
-                    self.isReady = false
-                    self.disconnectIfNeeded()
-                }
-            }
-            .store(in: &cancellables)
-
-        // Standalone session present: obtain a fresh access token and connect.
-        if standaloneAuth.hasStoredSession, let url = standaloneAuth.serverUrl {
+            // The stored access token is refreshed lazily; resolving it is
+            // async, so views that need `token` wait for it.
             Task { [weak self] in
                 await self?.activateStandaloneSession(serverUrl: url)
             }
+        } else {
+            requiresSignIn = true
         }
     }
 
@@ -109,14 +79,24 @@ class AppState: ObservableObject {
                 standaloneAuth.setProfile(name: profile.name, nick: profile.nick)
                 self.currentAccountId = profile.id
             }
+        } catch is CancellationError {
+            return
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            return
+        } catch let error as StandaloneAuthError {
+            // The stored refresh token is no longer usable (revoked/expired/missing).
+            // Drop the session and require a fresh device-flow sign-in rather
+            // than leaving a half-authenticated app with no usable token.
+            standaloneAuth.signOut()
+            token = nil
+            self.serverUrl = nil
+            requiresSignIn = true
+            errorMessage = error.localizedDescription
         } catch {
-            // Refresh failed (e.g. revoked). Fall back to the phone if paired;
-            // otherwise require re-auth.
-            self.isReady = false
-            if !standaloneAuth.hasStoredSession {
-                self.requiresSignIn = true
-            }
-            self.errorMessage = error.localizedDescription
+            // Transient failure (e.g. network): keep the session for retry on
+            // the next launch, but don't pretend to be signed in.
+            isReady = false
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -128,8 +108,6 @@ class AppState: ObservableObject {
         hasAttemptedConnection = false
         networkService.disconnectWebSocket()
         requiresSignIn = true
-        // If a phone is paired it can supply credentials again.
-        wcService.requestDataFromPhone()
     }
 
     // MARK: - Connection
@@ -140,16 +118,5 @@ class AppState: ObservableObject {
             print("[AppState] Connecting WebSocket to server: \(serverUrl)")
             networkService.connectWebSocket(token: token, serverUrl: serverUrl)
         }
-    }
-
-    private func disconnectIfNeeded() {
-        if hasAttemptedConnection {
-            hasAttemptedConnection = false
-            networkService.disconnectWebSocket()
-        }
-    }
-
-    func requestData() {
-        wcService.requestDataFromPhone()
     }
 }

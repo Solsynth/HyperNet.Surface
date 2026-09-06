@@ -44,7 +44,13 @@ final class AgentChatViewModel: ObservableObject {
     func loadInitial() async {
         guard !hasLoaded, !isLoading else { return }
         await waitForCredentials()
-        guard let token = appState.token, let serverUrl = appState.serverUrl else { return }
+        guard let token = appState.token, let serverUrl = appState.serverUrl else {
+            // Credentials never became available. Don't leave a silently-empty
+            // conversation list: route to the device-flow sign-in so the user
+            // re-authenticates instead of seeing a dead panel.
+            appState.requiresSignIn = true
+            return
+        }
 
         isLoading = true
         errorMessage = nil
@@ -285,9 +291,14 @@ final class AgentChatViewModel: ObservableObject {
     // MARK: - Helpers
 
     private func waitForCredentials() async {
+        // The first `.task` can run before the stored session's token refresh
+        // finishes. Wait up to a generous window (matches ChatView); bail early
+        // if sign-in is required (terminal refresh failure routes to the
+        // device-flow sign-in).
         var waitCount = 0
         while appState.token == nil || appState.serverUrl == nil {
-            guard waitCount < 24 else { return }
+            if appState.requiresSignIn { return }
+            guard waitCount < 60 else { return }
             try? await Task.sleep(for: .milliseconds(250))
             if Task.isCancelled { return }
             waitCount += 1
