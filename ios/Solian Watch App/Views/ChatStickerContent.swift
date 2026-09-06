@@ -82,12 +82,16 @@ func parseStickerContent(_ content: String) -> [StickerContentSegment] {
     return segments
 }
 
-/// A SwiftUI view rendering one message body with sticker spans.
+/// A SwiftUI view rendering one message body with sticker spans. Free-standing
+/// URLs in the body are rendered as tappable links that open in the watch's
+/// in-app web sheet (see [MessageText]), so a link a friend sends is clickable
+/// rather than inert text.
 struct ChatStickerContent: View {
     let content: String
     var isOwn: Bool = false
 
     @EnvironmentObject var appState: AppState
+    @StateObject private var webPresenter = InAppWebPresenter()
 
     private var textColor: Color { isOwn ? .white : .primary }
     private var standaloneDimension: CGFloat { 110 }
@@ -100,14 +104,12 @@ struct ChatStickerContent: View {
         } else if segments.contains(where: { if case .sticker = $0 { return true }; return false }) {
             mixedContent(segments)
         } else {
-            Text(content)
-                .font(.system(size: 14))
-                .foregroundColor(textColor)
+            MessageText(text: content, color: textColor, webPresenter: webPresenter)
         }
     }
 
-    /// Flows text (word by word) and inline stickers together with the shared
-    /// FlowLayout so long mixed lines wrap on the watch face.
+    /// Flows text (word by word, URLs tappable) and inline stickers together
+    /// with the shared FlowLayout so long mixed lines wrap on the watch face.
     @ViewBuilder
     private func mixedContent(_ segments: [StickerContentSegment]) -> some View {
         FlowLayout(alignment: .leading, spacing: 3) {
@@ -115,18 +117,56 @@ struct ChatStickerContent: View {
                 switch segment {
                 case .text(let text):
                     // Whitespace between words becomes the flow spacing; each
-                    // word wraps as its own unit.
+                    // word wraps as its own unit. A word that is a URL renders
+                    // as a tappable link.
                     ForEach(Array(text.split(separator: " ").enumerated()), id: \.offset) { _, word in
-                        Text(String(word))
-                            .font(.system(size: 14))
-                            .foregroundColor(textColor)
-                            .fixedSize()
+                        MessageText(text: String(word), color: textColor, webPresenter: webPresenter)
                     }
                 case .sticker(let identifier):
                     StickerRenderView(identifier: identifier, dimension: inlineDimension)
                 }
             }
         }
+    }
+}
+
+/// Renders a message text run, detecting free-standing URLs and making them
+/// tappable. Non-URL text renders as plain `Text`; a URL renders as a button
+/// that presents the link in the watch's in-app web sheet.
+private struct MessageText: View {
+    let text: String
+    let color: Color
+    let webPresenter: InAppWebPresenter
+
+    var body: some View {
+        if let url = Self.detectLink(in: text) {
+            Button {
+                webPresenter.present(url: url)
+            } label: {
+                Text(text)
+                    .font(.system(size: 14))
+                    .foregroundColor(color)
+                    .underline()
+                    .fixedSize()
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isLink)
+            .accessibilityLabel("\(text): \(L10n.linkOpenHere)")
+        } else {
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundColor(color)
+                .fixedSize()
+        }
+    }
+
+    /// Returns the URL when the whole `text` run is a single http(s) URL.
+    private static func detectLink(in text: String) -> URL? {
+        guard let url = URL(string: text),
+              let scheme = url.scheme?.lowercased(),
+              (scheme == "http" || scheme == "https"),
+              url.host != nil else { return nil }
+        return url
     }
 }
 

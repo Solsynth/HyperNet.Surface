@@ -30,6 +30,12 @@ struct MarkdownText: View {
     var lineLimit: Int? = nil
     var isHTML: Bool = false
 
+    /// Presents tappable markdown links in the watch's in-app web sheet. A
+    /// default `AttributedString(markdown:)` link uses `openURL`, which on
+    /// watchOS routes to the failed "view on your iPhone" Handoff — so we
+    /// intercept it here and open in-app instead.
+    @StateObject private var webPresenter = InAppWebPresenter()
+
     /// Standalone sticker size (main app: `large` = 96).
     private var standaloneDimension: CGFloat { 96 }
     /// Inline sticker size (main app: `medium` = 48, drawn tighter on watch).
@@ -40,6 +46,16 @@ struct MarkdownText: View {
     }
 
     var body: some View {
+        webSheet
+            .environment(\.openURL, OpenURLAction { url in
+                webPresenter.present(url: url) ? .handled : .systemAction
+            })
+    }
+
+    /// The actual content, with the openURL override applied so markdown links
+    /// open in the watch's web sheet instead of triggering a phone handoff.
+    @ViewBuilder
+    private var webSheet: some View {
         let segments = parseStickerContent(source)
         if segments.count == 1, case .sticker(let identifier) = segments[0] {
             StickerRenderView(identifier: identifier, dimension: standaloneDimension)
