@@ -146,14 +146,27 @@ class StargateApi extends BaseApi {
   /// Gets authorized applications for the current user.
   ///
   /// [type] - Filter by app type (0=Oidc, 1=AppConnect).
-  Future<List<Map<String, dynamic>>> getAuthorizedApps({int? type}) async {
+  Future<PaginatedResult<Map<String, dynamic>>> getAuthorizedApps({
+    int? type,
+    int offset = 0,
+    int take = 20,
+  }) async {
     final response = await get<List<dynamic>>(
       '$_basePath/authorized-apps',
-      queryParameters: {'type': ?type},
+      queryParameters: {
+        'type': ?type,
+        'offset': offset,
+        'take': take,
+      },
     );
-    final data = response.data;
-    if (data == null) return [];
-    return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    final totalCount = getTotalCount(response.headers);
+    final items = (response.data ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    return PaginatedResult(
+      items: items,
+      totalCount: totalCount,
+    );
   }
 
   /// Updates the scopes of an authorized application.

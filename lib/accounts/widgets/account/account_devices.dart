@@ -21,20 +21,41 @@ import 'package:styled_widget/styled_widget.dart';
 
 part 'account_devices.g.dart';
 
-@riverpod
-Future<PaginatedResult<SnAuthDeviceWithSession>> authDevices(Ref ref) async {
-  final stargateApi = ref.watch(solarNetworkClientProvider).stargate;
-  final currentId = await getUdid();
-  final resp = await stargateApi.getDevices();
-  return PaginatedResult(
-    items: resp.items.map((ele) {
+class AuthDevicesNotifier extends AsyncNotifier<PaginationState<SnAuthDeviceWithSession>>
+    with AsyncPaginationController<SnAuthDeviceWithSession> {
+  static const int pageSize = 50;
+
+  @override
+  FutureOr<PaginationState<SnAuthDeviceWithSession>> build() async {
+    final items = await fetch();
+    return PaginationState(
+      items: items,
+      isLoading: false,
+      isReloading: false,
+      totalCount: totalCount,
+      hasMore: hasMore,
+      cursor: cursor,
+    );
+  }
+
+  @override
+  Future<List<SnAuthDeviceWithSession>> fetch() async {
+    final stargateApi = ref.read(solarNetworkClientProvider).stargate;
+    final currentId = await getUdid();
+    final result = await stargateApi.getDevices(
+      offset: fetchedCount,
+      take: pageSize,
+    );
+    totalCount = result.totalCount;
+    return result.items.map((ele) {
       return ele.copyWith(isCurrent: ele.deviceId == currentId);
-    }).toList(),
-    totalCount: resp.totalCount,
-    hasMore: resp.hasMore,
-    cursor: resp.cursor,
-  );
+    }).toList();
+  }
 }
+
+final authDevicesProvider = AsyncNotifierProvider.autoDispose(
+  AuthDevicesNotifier.new,
+);
 
 /// Provider for root sessions only (sessions without parent or with children)
 @riverpod
@@ -1490,7 +1511,7 @@ class AccountSessionSheet extends HookConsumerWidget {
 }
 
 class _DevicesTab extends StatefulWidget {
-  final AsyncValue<PaginatedResult<SnAuthDeviceWithSession>> authDevices;
+  final AsyncValue<PaginationState<SnAuthDeviceWithSession>> authDevices;
   final bool wideScreen;
   final Function(String) logoutDevice;
   final Function(String) updateDeviceLabel;
@@ -1586,7 +1607,7 @@ class _DevicesTabState extends State<_DevicesTab> {
 
     return widget.authDevices.when(
       data: (data) {
-        if (data.items.isEmpty) {
+        if (data.items.isEmpty && !data.isLoading) {
           return ExtendedRefreshIndicator(
             onRefresh: () =>
                 Future.sync(() => widget.ref.invalidate(authDevicesProvider)),
@@ -1616,6 +1637,7 @@ class _DevicesTabState extends State<_DevicesTab> {
             data.items.where((d) => d.platform != 1).toList();
         final webDevices =
             data.items.where((d) => d.platform == 1).toList();
+        final isLoadingMore = data.isLoading && data.items.isNotEmpty;
 
         return ExtendedRefreshIndicator(
           onRefresh: () =>
@@ -1669,6 +1691,26 @@ class _DevicesTabState extends State<_DevicesTab> {
                   for (final device in webDevices)
                     _buildDeviceItem(context, device),
               ],
+
+              // Load more
+              if (data.hasMore)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Center(
+                    child: isLoadingMore
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton(
+                            onPressed: () => widget.ref
+                                .read(authDevicesProvider.notifier)
+                                .fetchFurther(),
+                            child: Text('loadMore'.tr()),
+                          ),
+                  ),
+                ),
             ],
           ),
         );

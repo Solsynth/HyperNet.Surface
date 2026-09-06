@@ -11,15 +11,40 @@ import 'package:island/shared/widgets/extended_refresh_indicator.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:solar_network_sdk/solar_network_sdk.dart';
 
-part 'account_authorized_apps.g.dart';
+class AuthorizedAppsNotifier extends AsyncNotifier<PaginationState<AuthorizedApp>>
+    with AsyncPaginationController<AuthorizedApp> {
+  static const int pageSize = 20;
 
-@riverpod
-Future<List<AuthorizedApp>> authorizedApps(Ref ref) async {
-  final stargateApi = ref.watch(solarNetworkClientProvider).stargate;
-  final response = await stargateApi.getAuthorizedApps();
-  return response.map(AuthorizedApp.fromJson).toList();
+  @override
+  FutureOr<PaginationState<AuthorizedApp>> build() async {
+    final items = await fetch();
+    return PaginationState(
+      items: items,
+      isLoading: false,
+      isReloading: false,
+      totalCount: totalCount,
+      hasMore: hasMore,
+      cursor: cursor,
+    );
+  }
+
+  @override
+  Future<List<AuthorizedApp>> fetch() async {
+    final stargateApi = ref.read(solarNetworkClientProvider).stargate;
+    final result = await stargateApi.getAuthorizedApps(
+      offset: fetchedCount,
+      take: pageSize,
+    );
+    totalCount = result.totalCount;
+    return result.items.map(AuthorizedApp.fromJson).toList();
+  }
 }
+
+final authorizedAppsProvider = AsyncNotifierProvider.autoDispose(
+  AuthorizedAppsNotifier.new,
+);
 
 class _AuthorizedAppCard extends StatelessWidget {
   final AuthorizedApp app;
@@ -260,62 +285,85 @@ class AccountAuthorizedAppsSheet extends HookConsumerWidget {
     return SheetScaffold(
       titleText: 'authorizedApps'.tr(),
       child: apps.when(
-        data: (data) => data.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.app_settings_alt,
-                      size: 64,
+        data: (data) {
+          if (data.items.isEmpty && !data.isLoading) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.app_settings_alt,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  Gap(16),
+                  Text(
+                    'dataEmpty'.tr(),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    Gap(16),
-                    Text(
-                      'dataEmpty'.tr(),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : ExtendedRefreshIndicator(
-                onRefresh: () =>
-                    Future.sync(() => ref.invalidate(authorizedAppsProvider)),
-                child: ListView.builder(
-                  padding: EdgeInsets.only(bottom: 16, top: 8),
-                  itemCount: data.length,
-                  itemBuilder: (context, index) {
-                    final app = data[index];
-                    return _AuthorizedAppCard(
-                      app: app,
-                      deauthorize: deauthorizeApp,
-                      onEditScopes: () async {
-                        final result = await showModalBottomSheet<List<String>>(
-                          context: context,
-                          useSafeArea: true,
-                          builder: (_) =>
-                              _ScopesEditor(initialScopes: app.scopes),
-                        );
-                        if (result == null || !context.mounted) return;
-                        showLoadingModal(context);
-                        try {
-                          await ref
-                              .read(solarNetworkClientProvider)
-                              .stargate
-                              .authorizeAppScopes(app.id, result);
-                          showSnackBar('scopesUpdated'.tr());
-                          ref.invalidate(authorizedAppsProvider);
-                        } catch (err) {
-                          showErrorAlert(err);
-                        }
-                        if (context.mounted) hideLoadingModal(context);
-                      },
-                    );
-                  },
-                ),
+                  ),
+                ],
               ),
+            );
+          }
+          final isLoadingMore = data.isLoading && data.items.isNotEmpty;
+          return ExtendedRefreshIndicator(
+            onRefresh: () =>
+                Future.sync(() => ref.invalidate(authorizedAppsProvider)),
+            child: ListView.builder(
+              padding: EdgeInsets.only(bottom: 16, top: 8),
+              itemCount: data.items.length + (data.hasMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == data.items.length) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Center(
+                      child: isLoadingMore
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : TextButton(
+                              onPressed: () => ref
+                                  .read(authorizedAppsProvider.notifier)
+                                  .fetchFurther(),
+                              child: Text('loadMore'.tr()),
+                            ),
+                    ),
+                  );
+                }
+                final app = data.items[index];
+                return _AuthorizedAppCard(
+                  app: app,
+                  deauthorize: deauthorizeApp,
+                  onEditScopes: () async {
+                    final result = await showModalBottomSheet<List<String>>(
+                      context: context,
+                      useSafeArea: true,
+                      builder: (_) =>
+                          _ScopesEditor(initialScopes: app.scopes),
+                    );
+                    if (result == null || !context.mounted) return;
+                    showLoadingModal(context);
+                    try {
+                      await ref
+                          .read(solarNetworkClientProvider)
+                          .stargate
+                          .authorizeAppScopes(app.id, result);
+                      showSnackBar('scopesUpdated'.tr());
+                      ref.invalidate(authorizedAppsProvider);
+                    } catch (err) {
+                      showErrorAlert(err);
+                    }
+                    if (context.mounted) hideLoadingModal(context);
+                  },
+                );
+              },
+            ),
+          );
+        },
         error: (err, _) => ResponseErrorWidget(
           error: err,
           onRetry: () => ref.invalidate(authorizedAppsProvider),

@@ -8,47 +8,6 @@ part of 'account_devices.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-
-@ProviderFor(authDevices)
-final authDevicesProvider = AuthDevicesProvider._();
-
-final class AuthDevicesProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<PaginatedResult<SnAuthDeviceWithSession>>,
-          PaginatedResult<SnAuthDeviceWithSession>,
-          FutureOr<PaginatedResult<SnAuthDeviceWithSession>>
-        >
-    with
-        $FutureModifier<PaginatedResult<SnAuthDeviceWithSession>>,
-        $FutureProvider<PaginatedResult<SnAuthDeviceWithSession>> {
-  AuthDevicesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'authDevicesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$authDevicesHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<PaginatedResult<SnAuthDeviceWithSession>>
-  $createElement($ProviderPointer pointer) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<PaginatedResult<SnAuthDeviceWithSession>> create(Ref ref) {
-    return authDevices(ref);
-  }
-}
-
-String _$authDevicesHash() => r'c1d79db6a3d0e65ed8692d01f70ba0591a8c937d';
-
 /// Provider for root sessions only (sessions without parent or with children)
 
 @ProviderFor(authSessions)
