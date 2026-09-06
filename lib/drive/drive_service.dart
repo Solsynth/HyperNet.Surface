@@ -223,6 +223,45 @@ String _encodeBlurHash({
   return output.toString();
 }
 
+/// Extracts the camera EXIF fields uploaded in `client_analysis` from an
+/// already-decoded image. Reads through the pure-Dart `image` package so the
+/// fields are available on every platform; `native_exif` only implements
+/// Android/iOS, so a path-based read silently produced nothing on desktop.
+Map<String, dynamic>? _extractImageExif(img.Image image) {
+  try {
+    final ifd0 = image.exif.imageIfd;
+    final exifIfd = image.exif.exifIfd;
+
+    String? firstValue(Iterable<String> keys) {
+      for (final key in keys) {
+        final value = ifd0[key] ?? exifIfd[key];
+        if (value == null) continue;
+        final text = value.toString().trim();
+        if (text.isEmpty) continue;
+        return text;
+      }
+      return null;
+    }
+
+    final mapped = <String, dynamic>{};
+    final dateTime = firstValue(['DateTime', 'DateTimeOriginal']);
+    final model = firstValue(['Model']);
+    final iso = firstValue(['ISOSpeedRatings', 'ISOSpeed']);
+    final fNumber = firstValue(['FNumber']);
+    final exposureTime = firstValue(['ExposureTime']);
+    final focalLength = firstValue(['FocalLength']);
+    if (dateTime != null) mapped['DateTime'] = dateTime;
+    if (model != null) mapped['Model'] = model;
+    if (iso != null) mapped['ISOSpeedRatings'] = iso;
+    if (fNumber != null) mapped['FNumber'] = fNumber;
+    if (exposureTime != null) mapped['ExposureTime'] = exposureTime;
+    if (focalLength != null) mapped['FocalLength'] = focalLength;
+    return mapped.isEmpty ? null : mapped;
+  } catch (_) {
+    return null;
+  }
+}
+
 Map<String, dynamic>? _prepareClientImageUploadInBackground(
   List<Object?> input,
 ) {
@@ -232,12 +271,14 @@ Map<String, dynamic>? _prepareClientImageUploadInBackground(
     final image = img.decodeImage(bytes);
     if (image == null || image.width <= 0 || image.height <= 0) return null;
     final blurhash = _encodeBlurHashFromImage(image);
+    final exif = _extractImageExif(image);
     if (image.hasAnimation || quality == null) {
       return {
         'width': image.width,
         'height': image.height,
         'animated': image.hasAnimation,
         'blurhash': blurhash,
+        'exif': exif,
       };
     }
 
@@ -259,6 +300,7 @@ Map<String, dynamic>? _prepareClientImageUploadInBackground(
       'prepared_width': prepared.width,
       'prepared_height': prepared.height,
       'blurhash': blurhash,
+      'exif': exif,
     };
     final preparedBytes = maxEdge > 1920
         ? Uint8List.fromList(img.encodeJpg(prepared, quality: 100))
@@ -980,46 +1022,6 @@ class FileUploader {
     return null;
   }
 
-  Future<Map<String, dynamic>?> _readLocalImageExif(String path) async {
-    if (path.isEmpty) return null;
-
-    Exif? exif;
-    try {
-      exif = await Exif.fromPath(path);
-      final attributes = await exif.getAttributes();
-      if (attributes == null || attributes.isEmpty) return null;
-
-      Object? firstValue(List<String> keys) {
-        for (final key in keys) {
-          final value = attributes[key];
-          if (value == null) continue;
-          if (value is String && value.trim().isEmpty) continue;
-          return value;
-        }
-        return null;
-      }
-
-      final mapped = <String, dynamic>{};
-      final dateTime = firstValue(['DateTime', 'DateTimeOriginal']);
-      final model = firstValue(['Model']);
-      final iso = firstValue(['ISOSpeedRatings']);
-      final fNumber = firstValue(['FNumber']);
-      final exposureTime = firstValue(['ExposureTime']);
-      final focalLength = firstValue(['FocalLength']);
-      if (dateTime != null) mapped['DateTime'] = dateTime;
-      if (model != null) mapped['Model'] = model;
-      if (iso != null) mapped['ISOSpeedRatings'] = iso;
-      if (fNumber != null) mapped['FNumber'] = fNumber;
-      if (exposureTime != null) mapped['ExposureTime'] = exposureTime;
-      if (focalLength != null) mapped['FocalLength'] = focalLength;
-      return mapped.isEmpty ? null : mapped;
-    } catch (_) {
-      return null;
-    } finally {
-      await exif?.close();
-    }
-  }
-
   Future<_ClientMediaUpload?> _prepareClientImageUpload(
     dynamic fileData, {
     int? compressionQuality,
@@ -1047,10 +1049,8 @@ class FileUploader {
       'width': prepared['width'],
       'height': prepared['height'],
     };
-    final localExif = fileData is XFile
-        ? await _readLocalImageExif(fileData.path)
-        : null;
-    if (localExif != null && localExif.isNotEmpty) {
+    final localExif = prepared['exif'];
+    if (localExif is Map && localExif.isNotEmpty) {
       analysis['exif_version'] = 2;
       analysis['exif'] = localExif;
     }

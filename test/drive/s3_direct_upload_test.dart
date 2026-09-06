@@ -583,36 +583,27 @@ void main() {
 
   test('image direct upload forwards safe local EXIF analysis', () async {
     dyson.singlePut = true;
+    // EXIF is read with the pure-Dart `image` package now (native_exif only
+    // implements Android/iOS, so a path-based read never worked on desktop),
+    // so the source JPEG must carry the tags in its own bytes.
+    final source = img.Image(width: 2, height: 2);
+    final ifd0 = source.exif.imageIfd;
+    ifd0['Model'] = img.IfdValueAscii('Test Camera');
+    ifd0['DateTime'] = img.IfdValueAscii('2026:08:21 12:34:56');
+    final exifIfd = source.exif.exifIfd;
+    exifIfd['ISOSpeed'] = img.IfdValueLong(100);
+    exifIfd['FNumber'] = img.IfdValueRational(28, 10);
+    exifIfd['ExposureTime'] = img.IfdValueRational(1, 120);
+    exifIfd['FocalLength'] = img.IfdValueRational(50, 1);
     final file = File(
       '${Directory.systemTemp.path}/'
       's3_exif_${DateTime.now().microsecondsSinceEpoch}.jpg',
     );
     await file.writeAsBytes(
-      img.encodeJpg(img.Image(width: 2, height: 2)),
+      img.encodeJpg(source, quality: 90),
       flush: true,
     );
     addTearDown(() => file.deleteSync());
-
-    const channel = MethodChannel('native_exif');
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(channel, (call) async {
-      return switch (call.method) {
-        'initPath' => 1,
-        'getAttributes' => <String, Object>{
-          'DateTimeOriginal': '2026:08:21 12:34:56',
-          'Model': 'Test Camera',
-          'ISOSpeedRatings': 100,
-          'FNumber': '2.8',
-          'ExposureTime': '1/120',
-          'FocalLength': '50',
-          'GPSLatitude': 1,
-          'GPSLongitude': 2,
-        },
-        _ => null,
-      };
-    });
-    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
     final uploader = container.read(driveFileUploaderProvider);
     final result = await uploader.tryUploadViaS3Direct(
@@ -627,10 +618,10 @@ void main() {
     expect(dyson.lastClientAnalysis?['exif'], {
       'DateTime': '2026:08:21 12:34:56',
       'Model': 'Test Camera',
-      'ISOSpeedRatings': 100,
-      'FNumber': '2.8',
+      'ISOSpeedRatings': '100',
+      'FNumber': '28/10',
       'ExposureTime': '1/120',
-      'FocalLength': '50',
+      'FocalLength': '50/1',
     });
   });
   test('image compression setting can disable the derivative', () async {
