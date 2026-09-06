@@ -5515,5 +5515,13 @@
   },
   "threadNoReplies": "还没有回复，来做第一个回复的人吧。",
   "threadLoadFailed": "加载讨论串失败。",
-  "replyInThread": "在讨论串中回复"
+  "replyInThread": "在讨论串中回复",
+  "challengeBiometricPrompt": "Use your biometrics to approve this login request",
+  "challengeBiometricReason": "Confirm this login on another device",
+  "challengeLocation": "Location",
+  "noStoredPin": "No PIN is stored on this device. Enter your PIN instead.",
+  "useBiometricInstead": "Use Biometric instead",
+  "biometricNotAvailable": "Biometrics are not available on this device.",
+  "biometricNotEnrolled": "No biometrics are enrolled on this device.",
+  "biometricLockedOut": "Biometrics are locked out. Use your PIN instead."
 }

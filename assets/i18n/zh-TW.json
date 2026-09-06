@@ -5374,5 +5374,13 @@
   },
   "threadNoReplies": "還沒有回覆，來當第一個回覆的人吧。",
   "threadLoadFailed": "載入討論串失敗。",
-  "replyInThread": "在討論串中回覆"
+  "replyInThread": "在討論串中回覆",
+  "challengeBiometricPrompt": "Use your biometrics to approve this login request",
+  "challengeBiometricReason": "Confirm this login on another device",
+  "challengeLocation": "Location",
+  "noStoredPin": "No PIN is stored on this device. Enter your PIN instead.",
+  "useBiometricInstead": "Use Biometric instead",
+  "biometricNotAvailable": "Biometrics are not available on this device.",
+  "biometricNotEnrolled": "No biometrics are enrolled on this device.",
+  "biometricLockedOut": "Biometrics are locked out. Use your PIN instead."
 }
