@@ -297,7 +297,7 @@ struct PostRowView: View {
                         HStack(spacing: 4) {
                             ForEach(reactionPills, id: \.0) { symbol, count in
                                 HStack(spacing: 2) {
-                                    Text(getReactionIcon(symbol))
+                                    ReactionGlyphView(symbol: symbol, size: 18)
                                     Text("\(count)")
                                         .font(.caption2)
                                 }
@@ -305,7 +305,7 @@ struct PostRowView: View {
                                 .padding(.vertical, 2)
                                 .background(
                                     (post.reactionsMade?[symbol] ?? false)
-                                        ? Color.accentColor.opacity(0.3)
+                                        ? Color.accentColor.opacity(0.5)
                                         : Color.gray.opacity(0.2)
                                 )
                                 .clipShape(Capsule())
@@ -462,7 +462,7 @@ struct PostDetailView: View {
                             }
                         } label: {
                             HStack(spacing: 2) {
-                                Text(getReactionIcon(symbol))
+                                ReactionGlyphView(symbol: symbol, size: 18)
                                 Text("\(count)")
                                     .font(.caption2)
                             }
@@ -470,7 +470,7 @@ struct PostDetailView: View {
                             .padding(.vertical, 4)
                             .background(
                                 (currentPost.reactionsMade?[symbol] ?? false)
-                                    ? Color.accentColor.opacity(0.3)
+                                    ? Color.accentColor.opacity(0.5)
                                     : Color.gray.opacity(0.15)
                             )
                             .clipShape(Capsule())
@@ -899,15 +899,20 @@ struct ReplyRowView: View {
                         if !reactionPills.isEmpty {
                             HStack(spacing: 3) {
                                 ForEach(reactionPills, id: \.0) { symbol, count in
-                                    Text(getReactionIcon(symbol))
-                                        .font(.caption2)
-                                    Text("\(count)")
-                                        .font(.system(size: 9))
+                                    HStack(spacing: 3) {
+                                        ReactionGlyphView(symbol: symbol, size: 16)
+                                        Text("\(count)")
+                                            .font(.system(size: 9))
+                                    }
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(
+                                        (post.reactionsMade?[symbol] ?? false)
+                                            ? Color.accentColor.opacity(0.4)
+                                            : Color.gray.opacity(0.15)
+                                    )
+                                    .clipShape(Capsule())
                                 }
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Color.gray.opacity(0.15))
-                                .clipShape(Capsule())
                             }
                         }
                         if let upvotes = post.upvotes, upvotes > 0 {

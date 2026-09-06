@@ -48,6 +48,21 @@ func getReactionAttitude(_ symbol: String) -> Int {
     return kReactionTemplates[symbol]?.attitude ?? 1
 }
 
+/// Reaction symbols that ship a bundled sticker image (copied from the main
+/// app's `assets/images/stickers`), so the watch renders the real sticker
+/// instead of an emoji fallback.
+let kReactionImageSymbols: Set<String> = [
+    "thumb_up", "thumb_down", "cry", "confuse", "hello", "shock",
+    "speechless", "ridicule", "salute", "clap", "laugh", "angry",
+    "party", "pray", "heart",
+]
+
+/// The bundled asset name for a reaction symbol's sticker image, or nil when
+/// the watch provides no matching sticker (callers fall back to `getReactionIcon`).
+func getReactionImageName(_ symbol: String) -> String? {
+    return kReactionImageSymbols.contains(symbol) ? symbol : nil
+}
+
 // MARK: - Post category display helpers
 
 /// Localized title for a known category slug, mirroring the main app's

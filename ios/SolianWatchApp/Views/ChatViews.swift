@@ -1229,31 +1229,10 @@ private struct ReactionAggregation {
     }
 }
 
-/// Emoji icon for a known reaction symbol. Custom sticker reactions (containing
-/// `+`) are rendered as a placeholder since the sticker API isn't wired yet.
-private func reactionEmoji(for symbol: String) -> String {
-    switch symbol {
-    case "thumb_up": return "👍"
-    case "thumb_down": return "👎"
-    case "cry": return "😭"
-    case "confuse": return "🧐"
-    case "hello": return "👋"
-    case "shock": return "😱"
-    case "speechless": return "😶"
-    case "ridicule": return "😏"
-    case "salute": return "🫡"
-    case "clap": return "👏"
-    case "laugh": return "😂"
-    case "angry": return "😡"
-    case "party": return "🎉"
-    case "pray": return "🙏"
-    case "heart": return "❤️"
-    default: return symbol.contains("+") ? "⭐" : "❓"
-    }
-}
-
 /// Compact horizontal row of reaction chips below a message bubble. Each chip
-/// shows the emoji + count; tapping toggles the user's reaction.
+/// shows the reaction sticker + count; tapping toggles the user's reaction.
+/// Stickers render as the bundled reaction image where available, else the
+/// emoji/star glyph fallback (see `ReactionGlyphView`).
 private struct MessageReactionChipsView: View {
     let message: SnChatMessage
     @ObservedObject var viewModel: ChatRoomViewModel
@@ -1283,15 +1262,14 @@ private struct MessageReactionChipsView: View {
                             Task { await viewModel.reactToMessage(message, symbol: symbol, attitude: attitude) }
                         } label: {
                             HStack(spacing: 3) {
-                                Text(reactionEmoji(for: symbol))
-                                    .font(.system(size: 12))
+                                ReactionGlyphView(symbol: symbol, size: 16)
                                 Text("\(count)")
                                     .font(.system(size: 10, weight: .medium))
                             }
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
                             .background(
-                                isMade ? Color.accentColor.opacity(0.2) : Color.gray.opacity(0.12),
+                                isMade ? Color.accentColor.opacity(0.45) : Color.gray.opacity(0.12),
                                 in: Capsule()
                             )
                             .overlay(
@@ -1313,6 +1291,43 @@ private struct MessageReactionChipsView: View {
 
 // MARK: - Message Action Menu (Sheet)
 
+/// Chat reaction picker. Same sticker-grid as the post reaction sheet, but the
+/// counts and "you reacted" state come from the message's reactions, and it
+/// sends via `reactToMessage`. Replaces the old heart-only quick-react.
+struct ChatReactionSheetView: View {
+    let message: SnChatMessage
+    @ObservedObject var viewModel: ChatRoomViewModel
+    @EnvironmentObject var appState: AppState
+
+    var body: some View {
+        ReactionPickerView(
+            reactionsCount: reactionsCount,
+            reactionsMade: reactionsMade,
+            onReact: { symbol, attitude in
+                await viewModel.reactToMessage(message, symbol: symbol, attitude: attitude)
+                return true
+            }
+        )
+        .environmentObject(appState)
+    }
+
+    private var reactionsCount: [String: Int] {
+        var counts: [String: Int] = [:]
+        for r in message.reactions {
+            counts[r.symbol, default: 0] += 1
+        }
+        return counts
+    }
+
+    private var reactionsMade: [String: Bool] {
+        var made: [String: Bool] = [:]
+        for r in message.reactions where r.senderId == appState.currentAccountId {
+            made[r.symbol] = true
+        }
+        return made
+    }
+}
+
 /// A watchOS-style action menu sheet shown on long-press of a message bubble.
 /// Presents a vertical list of actions (Reply, Forward, React, Edit, Delete,
 /// Pin) matching the Flutter app's `MessageActionSheet` but adapted for the
@@ -1325,6 +1340,7 @@ struct MessageActionMenuView: View {
     @EnvironmentObject var appState: AppState
     @Binding var showDeleteConfirmation: Bool
     @Environment(\.dismiss) private var dismiss
+    @State private var showReactionPicker = false
 
     var body: some View {
         NavigationView {
@@ -1348,10 +1364,9 @@ struct MessageActionMenuView: View {
                 }
                 Button {
                     WKInterfaceDevice.current().play(.click)
-                    Task { await viewModel.reactToMessage(message, symbol: "heart", attitude: 1) }
-                    dismiss()
+                    showReactionPicker = true
                 } label: {
-                    Label(L10n.chatRoomReact, systemImage: "heart")
+                    Label(L10n.chatRoomReact, systemImage: "face.smiling")
                 }
 
                 // ── Author actions ──
@@ -1395,6 +1410,10 @@ struct MessageActionMenuView: View {
             }
             .navigationTitle(L10n.chatRoomActions)
             .navigationBarTitleDisplayMode(.inline)
+        }
+        .sheet(isPresented: $showReactionPicker) {
+            ChatReactionSheetView(message: message, viewModel: viewModel)
+                .environmentObject(appState)
         }
     }
 }

@@ -315,6 +315,12 @@ public enum L10n {
     static let reactionPositive = NSLocalizedString("reaction.positive", comment: "Positive")
     static let reactionNeutral = NSLocalizedString("reaction.neutral", comment: "Neutral")
     static let reactionNegative = NSLocalizedString("reaction.negative", comment: "Negative")
+    static let reactionCustom = NSLocalizedString("reaction.custom", comment: "Custom reaction")
+    static let reactionAttitude = NSLocalizedString("reaction.attitude", comment: "Reaction attitude")
+    static let reactionAdd = NSLocalizedString("reaction.add", comment: "Add reaction")
+    static let reactionPickSticker = NSLocalizedString("reaction.pickSticker", comment: "Pick a sticker")
+    static let reactionClear = NSLocalizedString("reaction.clear", comment: "Clear reaction")
+    static let reactionCustomHint = NSLocalizedString("reaction.customHint", comment: "Custom reaction accessibility hint")
 
     // MARK: - DiscoveryViews
     static let discoveryRealm = NSLocalizedString("discovery.realm", comment: "Realm")

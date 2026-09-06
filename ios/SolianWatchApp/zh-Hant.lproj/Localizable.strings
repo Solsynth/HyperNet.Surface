@@ -302,6 +302,12 @@
 "reaction.positive" = "正面";
 "reaction.neutral" = "中立";
 "reaction.negative" = "負面";
+"reaction.custom" = "自訂反應";
+"reaction.attitude" = "反應屬性";
+"reaction.add" = "新增反應";
+"reaction.pickSticker" = "選擇貼圖";
+"reaction.clear" = "清除";
+"reaction.customHint" = "從貼圖新增一個回應";
 
 /* MARK: - DiscoveryViews */
 "discovery.realm" = "領域";

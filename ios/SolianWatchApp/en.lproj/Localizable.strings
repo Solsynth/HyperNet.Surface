@@ -302,6 +302,12 @@
 "reaction.positive" = "Positive";
 "reaction.neutral" = "Neutral";
 "reaction.negative" = "Negative";
+"reaction.custom" = "Custom Reaction";
+"reaction.attitude" = "Reaction Attitude";
+"reaction.add" = "Add Reaction";
+"reaction.pickSticker" = "Pick a Sticker";
+"reaction.clear" = "Clear";
+"reaction.customHint" = "Create a new reaction from a sticker";
 
 /* MARK: - DiscoveryViews */
 "discovery.realm" = "Realm";

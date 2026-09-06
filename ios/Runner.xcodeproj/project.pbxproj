@@ -16,7 +16,7 @@
 		7301DB032F08D99C008390F3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7301DB022F08D99C008390F3 /* WidgetKit.framework */; };
 		7301DB052F08D99C008390F3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7301DB042F08D99C008390F3 /* SwiftUI.framework */; };
 		7301DB102F08D99D008390F3 /* SolianWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7301DB012F08D99C008390F3 /* SolianWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		7310A7DF2EB10963002C0FD3 /* Solian Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7310A7D42EB10962002C0FD3 /* Solian Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7310A7DF2EB10963002C0FD3 /* SolianWatchApp.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7310A7D42EB10962002C0FD3 /* SolianWatchApp.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		73595B1B2F17FF8000AAD53C /* SfxMessage.caf in Resources */ = {isa = PBXBuildFile; fileRef = 73595B162F17FF8000AAD53C /* SfxMessage.caf */; };
 		73595B1C2F17FF8000AAD53C /* SfxNotification.caf in Resources */ = {isa = PBXBuildFile; fileRef = 73595B172F17FF8000AAD53C /* SfxNotification.caf */; };
 		73595B832F1803D300AAD53C /* SfxNotification.caf in Resources */ = {isa = PBXBuildFile; fileRef = 73595B172F17FF8000AAD53C /* SfxNotification.caf */; };
@@ -87,7 +87,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				7310A7DF2EB10963002C0FD3 /* Solian Watch App.app in Embed Watch Content */,
+				7310A7DF2EB10963002C0FD3 /* SolianWatchApp.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -143,7 +143,7 @@
 		7301DB022F08D99C008390F3 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		7301DB042F08D99C008390F3 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		7301DB162F08D9A5008390F3 /* SolianWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SolianWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
-		7310A7D42EB10962002C0FD3 /* Solian Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Solian Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7310A7D42EB10962002C0FD3 /* SolianWatchApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SolianWatchApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		73595B162F17FF8000AAD53C /* SfxMessage.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = SfxMessage.caf; sourceTree = "<group>"; };
 		73595B172F17FF8000AAD53C /* SfxNotification.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = SfxNotification.caf; sourceTree = "<group>"; };
 		737E920B2DB6A9FF00BE9CDB /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
@@ -436,7 +436,7 @@
 				73CDD67A2DEC00480059D95D /* SolianNotificationService.appex */,
 				73C305CE2E0BE878009035B9 /* SolianShareExtension.appex */,
 				73ACDFAB2E3D0E6100B63535 /* SolianBroadcastExtension.appex */,
-				7310A7D42EB10962002C0FD3 /* Solian Watch App.app */,
+				7310A7D42EB10962002C0FD3 /* SolianWatchApp.app */,
 				7301DB012F08D99C008390F3 /* SolianWidgetExtensionExtension.appex */,
 			);
 			name = Products;
@@ -504,9 +504,9 @@
 			productReference = 7301DB012F08D99C008390F3 /* SolianWidgetExtensionExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		7310A7D32EB10962002C0FD3 /* Solian Watch App */ = {
+		7310A7D32EB10962002C0FD3 /* SolianWatchApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7310A7E32EB10963002C0FD3 /* Build configuration list for PBXNativeTarget "Solian Watch App" */;
+			buildConfigurationList = 7310A7E32EB10963002C0FD3 /* Build configuration list for PBXNativeTarget "SolianWatchApp" */;
 			buildPhases = (
 				8365B463D317143FEFB1EEDF /* [CP] Check Pods Manifest.lock */,
 				7310A7D02EB10962002C0FD3 /* Sources */,
@@ -521,9 +521,9 @@
 			fileSystemSynchronizedGroups = (
 				7310A7D52EB10962002C0FD3 /* SolianWatchApp */,
 			);
-			name = "Solian Watch App";
+			name = SolianWatchApp;
 			productName = "WatchRunner Watch App";
-			productReference = 7310A7D42EB10962002C0FD3 /* Solian Watch App.app */;
+			productReference = 7310A7D42EB10962002C0FD3 /* SolianWatchApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 		73ACDFAA2E3D0E6100B63535 /* SolianBroadcastExtension */ = {
@@ -685,7 +685,7 @@
 				73CDD6792DEC00480059D95D /* SolianNotificationService */,
 				73C305CD2E0BE878009035B9 /* SolianShareExtension */,
 				73ACDFAA2E3D0E6100B63535 /* SolianBroadcastExtension */,
-				7310A7D32EB10962002C0FD3 /* Solian Watch App */,
+				7310A7D32EB10962002C0FD3 /* SolianWatchApp */,
 				7301DB002F08D99C008390F3 /* SolianWidgetExtensionExtension */,
 			);
 		};
@@ -1152,7 +1152,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
@@ -1255,7 +1255,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianWidgetExtension;
@@ -1301,7 +1301,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianWidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1344,7 +1344,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianWidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1371,7 +1371,7 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = "Solian Watch App/SolianWatchApp.entitlements";
+				CODE_SIGN_ENTITLEMENTS = SolianWatchApp/SolianWatchApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W7HPZ53V6B;
@@ -1391,7 +1391,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.watchkitapp;
@@ -1424,7 +1424,7 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = "Solian Watch App/SolianWatchApp.entitlements";
+				CODE_SIGN_ENTITLEMENTS = SolianWatchApp/SolianWatchApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W7HPZ53V6B;
@@ -1444,7 +1444,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1475,7 +1475,7 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = "Solian Watch App/SolianWatchApp.entitlements";
+				CODE_SIGN_ENTITLEMENTS = SolianWatchApp/SolianWatchApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W7HPZ53V6B;
@@ -1495,7 +1495,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1540,7 +1540,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianBroadcastExtension;
@@ -1582,7 +1582,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianBroadcastExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1621,7 +1621,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianBroadcastExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1662,7 +1662,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = "";
@@ -1708,7 +1708,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianShareExtension;
@@ -1751,7 +1751,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianShareExtension;
@@ -1793,7 +1793,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianNotificationService;
@@ -1835,7 +1835,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianNotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1874,7 +1874,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian.SolianNotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2016,7 +2016,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ENABLE_EXPLICIT_MODULES = "$(SWIFT_USE_INTEGRATED_DRIVER)";
@@ -2048,7 +2048,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.12.0;
+				MARKETING_VERSION = 3.13.0;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.solsynth.solian;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2084,7 +2084,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7310A7E32EB10963002C0FD3 /* Build configuration list for PBXNativeTarget "Solian Watch App" */ = {
+		7310A7E32EB10963002C0FD3 /* Build configuration list for PBXNativeTarget "SolianWatchApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				7310A7E02EB10963002C0FD3 /* Debug */,

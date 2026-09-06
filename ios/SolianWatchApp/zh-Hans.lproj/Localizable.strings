@@ -302,6 +302,12 @@
 "reaction.positive" = "正面";
 "reaction.neutral" = "中立";
 "reaction.negative" = "负面";
+"reaction.custom" = "自定义反应";
+"reaction.attitude" = "反应属性";
+"reaction.add" = "添加反应";
+"reaction.pickSticker" = "选择贴纸";
+"reaction.clear" = "清除";
+"reaction.customHint" = "从贴纸新建一个回应";
 
 /* MARK: - DiscoveryViews */
 "discovery.realm" = "领域";
