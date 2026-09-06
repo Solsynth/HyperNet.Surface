@@ -28,13 +28,17 @@ class AuthDevicesNotifier extends AsyncNotifier<PaginationState<SnAuthDeviceWith
   @override
   FutureOr<PaginationState<SnAuthDeviceWithSession>> build() async {
     final items = await fetch();
+    final resolvedTotal = totalCount;
+    final more = resolvedTotal == null
+        ? items.isNotEmpty
+        : items.length < resolvedTotal;
     return PaginationState(
       items: items,
       isLoading: false,
       isReloading: false,
-      totalCount: totalCount,
-      hasMore: hasMore,
-      cursor: cursor,
+      totalCount: resolvedTotal,
+      hasMore: more,
+      cursor: null,
     );
   }
 
@@ -378,6 +382,9 @@ class _DeviceDetailSheet extends HookConsumerWidget {
         final stargateApi = ref.read(solarNetworkClientProvider).stargate;
         await stargateApi.updateDeviceLabel(device.deviceId, label);
         ref.invalidate(authDevicesProvider);
+        if (context.mounted) {
+          Navigator.pop(context, true);
+        }
       } catch (err) {
         showErrorAlert(err);
       }
@@ -1378,6 +1385,9 @@ class AccountSessionSheet extends HookConsumerWidget {
         ref.invalidate(authDevicesProvider);
         // Also invalidate expanded session children
         ref.invalidate(sessionChildrenProvider(sessionId));
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
       } catch (err) {
         showErrorAlert(err);
       }
@@ -1397,6 +1407,9 @@ class AccountSessionSheet extends HookConsumerWidget {
         ref.invalidate(authSessionsProvider);
         ref.invalidate(authDevicesProvider);
         ref.invalidate(expandedSessionsProvider);
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
       } catch (err) {
         showErrorAlert(err);
       }
@@ -1443,7 +1456,12 @@ class AccountSessionSheet extends HookConsumerWidget {
         context: context,
         isScrollControlled: true,
         builder: (context) => _DeviceDetailSheet(device: device),
-      );
+      ).then((value) {
+        if (value == true) {
+          ref.invalidate(authDevicesProvider);
+          ref.invalidate(authSessionsProvider);
+        }
+      });
     }
 
     final wideScreen = isWideScreen(context);

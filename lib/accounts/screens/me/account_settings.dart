@@ -293,7 +293,7 @@ class AccountSettingsScreen extends HookConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                       child: Text(
                         'securityModeDescription'.tr(),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(

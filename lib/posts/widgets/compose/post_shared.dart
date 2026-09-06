@@ -1352,9 +1352,13 @@ class ReferencedPostWidget extends HookConsumerWidget {
                         children: [
                           // Line extending down from referenced post's avatar area
                           Expanded(
-                            child: Container(
+                            child: SizedBox(
                               width: kPostThreadingLineWidth,
-                              color: Theme.of(context).dividerColor,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                              ),
                             ),
                           ),
                         ],
