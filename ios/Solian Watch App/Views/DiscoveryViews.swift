@@ -378,9 +378,10 @@ struct ArticleDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 Text(article.title).font(.headline)
-                Link(article.url, destination: URL(string: article.url)!)
-                    .font(.caption)
-                    .foregroundColor(.blue)
+                // Not a `Link` — watchOS has no browser, so a `Link` to a web
+                // URL shows the failed "view on your iPhone" Handoff flow.
+                // Copy the URL to the pasteboard instead.
+                ExternalLinkView(urlString: article.url)
             }
             .padding()
         }

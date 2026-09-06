@@ -34,6 +34,10 @@ final class ChatRoomViewModel: ObservableObject {
     /// Where the view should scroll after the next `messages` mutation:
     /// `.bottom` for new arrivals, `.top` after loading older.
     @Published private(set) var lastScrollTarget: ScrollTarget = .bottom
+    /// A pending "jump to this message" target, set when the user taps a
+    /// quote/forward reference. The timeline observes it and scrolls the
+    /// referenced bubble into view, then clears it.
+    @Published private(set) var scrollToMessageId: String?
 
     /// Sending status per message id. Rows with `.pending` show a translucent
     /// bubble + spinner; `.failed` shows an error mark. Confirmed rows are absent.
@@ -304,6 +308,17 @@ final class ChatRoomViewModel: ObservableObject {
     /// Whether the message has been edited (visible "Edited" meta).
     func isEdited(_ message: SnChatMessage) -> Bool {
         message.editedAt != nil
+    }
+
+    /// Requests the timeline to scroll to a message (quote/forward reference
+    /// tap). The view clears the request after scrolling.
+    func requestScrollToMessage(_ messageId: String) {
+        scrollToMessageId = messageId
+    }
+
+    /// Clears a pending scroll-to-message request once the view has handled it.
+    func clearScrollToMessage() {
+        scrollToMessageId = nil
     }
 
     // MARK: - Sending

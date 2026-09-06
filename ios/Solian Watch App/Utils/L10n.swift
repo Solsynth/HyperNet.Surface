@@ -194,6 +194,11 @@ public enum L10n {
     static let postBookmark = NSLocalizedString("post.bookmark", comment: "Bookmark")
     static let postRemoveBookmark = NSLocalizedString("post.removeBookmark", comment: "Remove bookmark")
     static let postUnknownActivity = NSLocalizedString("post.unknownActivity", comment: "Unknown activity")
+    static let linkOpenHere = NSLocalizedString("link.openHere", comment: "Open here on the watch")
+    static let linkOpenOnPhone = NSLocalizedString("link.openOnPhone", comment: "Open on your iPhone")
+    static let linkSendingToPhone = NSLocalizedString("link.sendingToPhone", comment: "Sending to your iPhone")
+    static let linkOpenedOnPhone = NSLocalizedString("link.openedOnPhone", comment: "Opened on your iPhone")
+    static let linkPhoneUnreachable = NSLocalizedString("link.phoneUnreachable", comment: "iPhone not reachable")
 
     // MARK: - ComposePostView
     static let composeNewPost = NSLocalizedString("compose.newPost", comment: "New post")

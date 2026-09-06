@@ -88,51 +88,57 @@ struct PostAuthorHeader: View {
 
 /// A referenced-post chip: the reply/forward header (author, label) plus the
 /// referenced post's own compact content. Renders in the current post's body
-/// (reply/quote context) and in replies previews. The model only embeds a
-/// lightweight `SnPostReference` (id + title/content/publisher) rather than a
-/// full post, so the chip is a static preview — no detail navigation. Mirrors
+/// (reply/quote context) and in replies previews. Tapping it opens the
+/// referenced post's full detail (fetched by id on appear). The model only
+/// embeds a lightweight `SnPostReference` (id + title/content/publisher), so
+/// the chip navigates using `reference.shell` and the detail refetches. Mirrors
 /// the main app's `ReferencedPostWidget`.
 struct ReferencedPostReferenceView: View {
     let reference: SnPostReference
     var isReply: Bool = false
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
-                Image(systemName: isReply ? "arrowshape.turn.up.left" : "arrowshape.turn.up.right")
-                    .font(.system(size: 10))
-                Text(isReply ? "Replied to \(authorName)" : "Forwarded from \(authorName)")
-                    .font(.system(size: 10, weight: .semibold))
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-            }
-            .foregroundStyle(.secondary)
+        NavigationLink(destination: PostDetailView(post: reference.shell)
+            .environmentObject(appState)) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Image(systemName: isReply ? "arrowshape.turn.up.left" : "arrowshape.turn.up.right")
+                        .font(.system(size: 10))
+                    Text(isReply ? "Replied to \(authorName)" : "Forwarded from \(authorName)")
+                        .font(.system(size: 10, weight: .semibold))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(.secondary)
 
-            if let title = reference.title, !title.isEmpty {
-                Text(title)
-                    .font(.caption)
-                    .bold()
-                    .lineLimit(2)
+                if let title = reference.title, !title.isEmpty {
+                    Text(title)
+                        .font(.caption)
+                        .bold()
+                        .lineLimit(2)
+                }
+                if let content = reference.content, !content.isEmpty {
+                    MarkdownText(
+                        content: content,
+                        lineLimit: 3
+                    )
+                    .font(.system(size: 11))
+                    .foregroundStyle(.primary.opacity(0.9))
+                }
+                if let publisher = reference.publisher {
+                    Text("@\(publisher.nick ?? publisher.name)")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
-            if let content = reference.content, !content.isEmpty {
-                MarkdownText(
-                    content: content,
-                    lineLimit: 3
-                )
-                .font(.system(size: 11))
-                .foregroundStyle(.primary.opacity(0.9))
-            }
-            if let publisher = reference.publisher {
-                Text("@\(publisher.nick ?? publisher.name)")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .buttonStyle(.plain)
     }
 
     private var authorName: String {
@@ -186,77 +192,20 @@ struct PostRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            PostAuthorHeader(post: post, isCompact: true)
-
-            if let title = post.title, !title.isEmpty {
-                Text(title)
-                    .font(.subheadline)
-                    .bold()
-                    .lineLimit(2)
+            NavigationLink(destination: PostDetailView(post: post)
+                .environmentObject(appState)) {
+                rowContent
             }
+            .buttonStyle(.plain)
 
-            if let content = post.content, !content.isEmpty {
-                MarkdownText(
-                    content: content,
-                    lineLimit: 4,
-                    isHTML: (post.contentType ?? 0) == 1
-                )
-                .font(.caption)
-                .foregroundStyle(.primary)
-            }
-
-            if let attachments = post.attachments, !attachments.isEmpty {
-                AttachmentView(attachment: attachments[0], isCompact: true)
-                    .frame(maxWidth: .infinity)
-                if attachments.count > 1 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "paperclip")
-                            .font(.caption2)
-                        Text("+\(attachments.count - 1)")
-                            .font(.caption2)
-                    }
-                    .foregroundStyle(.secondary)
-                }
-            }
-
+            // The referenced (reply/forward) chip is a sibling link OUTSIDE the
+            // row's own link, so tapping it opens the referenced post rather
+            // than being swallowed by the row's navigation.
             if let reference = referencedPost {
                 ReferencedPostReferenceView(reference: reference, isReply: post.repliedPostId != nil)
             }
-
-            if !reactionPills.isEmpty || post.upvotes != nil || post.downvotes != nil || post.repliesCount != nil {
-                HStack(spacing: 6) {
-                    if !reactionPills.isEmpty {
-                        HStack(spacing: 4) {
-                            ForEach(reactionPills, id: \.0) { symbol, count in
-                                HStack(spacing: 2) {
-                                    Text(getReactionIcon(symbol))
-                                    Text("\(count)")
-                                        .font(.caption2)
-                                }
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(
-                                    (post.reactionsMade?[symbol] ?? false)
-                                        ? Color.accentColor.opacity(0.3)
-                                        : Color.gray.opacity(0.2)
-                                )
-                                .clipShape(Capsule())
-                            }
-                        }
-                    }
-                    engagementViews
-                    Spacer()
-                    if let pinMode = post.pinMode, pinMode > 0 {
-                        Image(systemName: "pin.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.orange)
-                    }
-                }
-                .padding(.top, 2)
-            }
         }
         .padding(.vertical)
-        .contentShape(Rectangle())
         .sheet(isPresented: $showReactionSheet) {
             ReactionSheetView(post: post)
                 .environmentObject(appState)
@@ -295,6 +244,79 @@ struct PostRowView: View {
             }
             .tint(.green)
         }
+    }
+
+    /// The row's own content (header, title, body, attachments, engagement
+    /// stats) — opened via the row's `NavigationLink`. The referenced
+    /// reply/forward chip is kept OUT of here so it can be its own link.
+    private var rowContent: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            PostAuthorHeader(post: post, isCompact: true)
+
+            if let title = post.title, !title.isEmpty {
+                Text(title)
+                    .font(.subheadline)
+                    .bold()
+                    .lineLimit(2)
+            }
+
+            if let content = post.content, !content.isEmpty {
+                MarkdownText(
+                    content: content,
+                    lineLimit: 4,
+                    isHTML: (post.contentType ?? 0) == 1
+                )
+                .font(.caption)
+                .foregroundStyle(.primary)
+            }
+
+            if let attachments = post.attachments, !attachments.isEmpty {
+                AttachmentView(attachment: attachments[0], isCompact: true)
+                    .frame(maxWidth: .infinity)
+                if attachments.count > 1 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "paperclip")
+                            .font(.caption2)
+                        Text("+\(attachments.count - 1)")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(.secondary)
+                }
+            }
+
+            if !reactionPills.isEmpty || post.upvotes != nil || post.downvotes != nil || post.repliesCount != nil {
+                HStack(spacing: 6) {
+                    if !reactionPills.isEmpty {
+                        HStack(spacing: 4) {
+                            ForEach(reactionPills, id: \.0) { symbol, count in
+                                HStack(spacing: 2) {
+                                    Text(getReactionIcon(symbol))
+                                    Text("\(count)")
+                                        .font(.caption2)
+                                }
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    (post.reactionsMade?[symbol] ?? false)
+                                        ? Color.accentColor.opacity(0.3)
+                                        : Color.gray.opacity(0.2)
+                                )
+                                .clipShape(Capsule())
+                            }
+                        }
+                    }
+                    engagementViews
+                    Spacer()
+                    if let pinMode = post.pinMode, pinMode > 0 {
+                        Image(systemName: "pin.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .padding(.top, 2)
+            }
+        }
+        .contentShape(Rectangle())
     }
 
     private var referencedPost: SnPostReference? {
@@ -358,6 +380,7 @@ struct PostDetailView: View {
                 content
                 if !reactionPills.isEmpty { reactionStrip }
                 attachmentsSection
+                categoriesSection
                 tagsSection
                 embedSection
                 statsRow
@@ -479,14 +502,49 @@ struct PostDetailView: View {
     @ViewBuilder
     private var tagsSection: some View {
         if let tags = currentPost.tags, !tags.isEmpty {
-            FlowLayout(alignment: .leading, spacing: 4) {
+            FlowLayout(alignment: .leading, spacing: 6) {
                 ForEach(tags) { tag in
-                    Text("#\(tag.name ?? tag.slug)")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Capsule().fill(Color.accentColor.opacity(0.15)))
-                        .cornerRadius(5)
+                    // Tapping a tag opens a filtered list of posts that use it.
+                    NavigationLink(
+                        destination: PostQueryListView(
+                            title: "#\(tag.displayName)",
+                            tagSlugs: [tag.slug]
+                        ).environmentObject(appState)
+                    ) {
+                        Text("#\(tag.displayName)")
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                            .cornerRadius(5)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var categoriesSection: some View {
+        if let categories = currentPost.categories, !categories.isEmpty {
+            FlowLayout(alignment: .leading, spacing: 6) {
+                ForEach(categories) { category in
+                    // Tapping a category opens a filtered list of posts that
+                    // belong to it.
+                    NavigationLink(
+                        destination: PostQueryListView(
+                            title: category.displayName,
+                            categorySlugs: [category.slug]
+                        ).environmentObject(appState)
+                    ) {
+                        Text(category.displayName)
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                            .cornerRadius(5)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -499,9 +557,10 @@ struct PostDetailView: View {
                 Text(L10n.postLink)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Link(embed.uri, destination: URL(string: embed.uri)!)
-                    .font(.caption)
-                    .lineLimit(2)
+                // Not a `Link` — watchOS has no browser, so a `Link` to an
+                // HTTPS URL shows the failed "view on your iPhone" Handoff
+                // flow. Copy the URL to the pasteboard instead.
+                ExternalLinkView(urlString: embed.uri)
             }
             .padding(8)
             .background(Color.gray.opacity(0.1))
@@ -813,54 +872,58 @@ struct ReplyRowView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            PostAuthorHeader(post: post, isCompact: true)
+        NavigationLink(destination: PostDetailView(post: post)
+            .environmentObject(appState)) {
+            VStack(alignment: .leading, spacing: 4) {
+                PostAuthorHeader(post: post, isCompact: true)
 
-            if let content = post.content, !content.isEmpty {
-                MarkdownText(
-                    content: content,
-                    lineLimit: 6,
-                    isHTML: (post.contentType ?? 0) == 1
-                )
-                .font(.caption)
-                .foregroundStyle(.primary)
-            }
-
-            if !reactionPills.isEmpty || (post.upvotes ?? 0) > 0 || (post.repliesCount ?? 0) > 0 {
-                HStack(spacing: 8) {
-                    if !reactionPills.isEmpty {
-                        HStack(spacing: 3) {
-                            ForEach(reactionPills, id: \.0) { symbol, count in
-                                Text(getReactionIcon(symbol))
-                                    .font(.caption2)
-                                Text("\(count)")
-                                    .font(.system(size: 9))
-                            }
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(Color.gray.opacity(0.15))
-                            .clipShape(Capsule())
-                        }
-                    }
-                    if let upvotes = post.upvotes, upvotes > 0 {
-                        Image(systemName: "arrow.up")
-                            .font(.system(size: 9))
-                        Text("\(upvotes)")
-                            .font(.system(size: 9))
-                    }
-                    if let replies = post.repliesCount, replies > 0 {
-                        Image(systemName: "bubble.right")
-                            .font(.system(size: 9))
-                        Text("\(replies)")
-                            .font(.system(size: 9))
-                    }
-                    Spacer()
+                if let content = post.content, !content.isEmpty {
+                    MarkdownText(
+                        content: content,
+                        lineLimit: 6,
+                        isHTML: (post.contentType ?? 0) == 1
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.primary)
                 }
-                .foregroundStyle(.secondary)
+
+                if !reactionPills.isEmpty || (post.upvotes ?? 0) > 0 || (post.repliesCount ?? 0) > 0 {
+                    HStack(spacing: 8) {
+                        if !reactionPills.isEmpty {
+                            HStack(spacing: 3) {
+                                ForEach(reactionPills, id: \.0) { symbol, count in
+                                    Text(getReactionIcon(symbol))
+                                        .font(.caption2)
+                                    Text("\(count)")
+                                        .font(.system(size: 9))
+                                }
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.gray.opacity(0.15))
+                                .clipShape(Capsule())
+                            }
+                        }
+                        if let upvotes = post.upvotes, upvotes > 0 {
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 9))
+                            Text("\(upvotes)")
+                                .font(.system(size: 9))
+                        }
+                        if let replies = post.repliesCount, replies > 0 {
+                            Image(systemName: "bubble.right")
+                                .font(.system(size: 9))
+                            Text("\(replies)")
+                                .font(.system(size: 9))
+                        }
+                        Spacer()
+                    }
+                    .foregroundStyle(.secondary)
+                }
             }
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 6)
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
         .sheet(isPresented: $showReactionSheet) {
             ReactionSheetView(post: post)
                 .environmentObject(appState)

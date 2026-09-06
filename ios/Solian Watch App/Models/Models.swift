@@ -166,6 +166,74 @@ struct SnPostEmbedView: Codable {
     }
 }
 
+extension SnPost {
+    /// A lightweight shell for navigating to a referenced/replied post. The
+    /// detail view refetches the full post by `id` on appear, so only a stable
+    /// id is required here. Seeded with the reference's summary where available
+    /// so the row isn't blank for a frame before the fetch lands.
+    init(id: String, reference seed: SnPostReference? = nil) {
+        self.init(
+            id: id,
+            title: seed?.title,
+            description: nil,
+            language: nil,
+            editedAt: nil,
+            draftedAt: nil,
+            publishedAt: nil,
+            visibility: nil,
+            content: seed?.content,
+            slug: nil,
+            type: nil,
+            meta: nil,
+            embedView: nil,
+            viewsUnique: nil,
+            viewsTotal: nil,
+            upvotes: nil,
+            downvotes: nil,
+            repliesCount: nil,
+            threadedRepliesCount: nil,
+            debugRank: nil,
+            awardedScore: nil,
+            pinMode: nil,
+            threadedPostId: nil,
+            threadedPost: nil,
+            repliedPostId: nil,
+            repliedPost: nil,
+            forwardedPostId: nil,
+            forwardedPost: nil,
+            realmId: nil,
+            realm: nil,
+            publisherId: nil,
+            publisher: seed?.publisher,
+            actorid: nil,
+            actor: nil,
+            fediverseUri: nil,
+            fediverseType: nil,
+            isCached: false,
+            contentType: nil,
+            attachments: nil,
+            reactionsCount: nil,
+            reactionsMade: nil,
+            reactions: nil,
+            tags: nil,
+            categories: nil,
+            collections: nil,
+            publisherCollections: nil,
+            featuredRecords: nil,
+            createdAt: seed?.createdAt,
+            updatedAt: nil,
+            deletedAt: nil,
+            repliedGone: nil,
+            forwardedGone: nil,
+            isTruncated: false,
+            boostedBy: nil,
+            boostedAt: nil,
+            sponsored: false,
+            isBookmarked: false
+        )
+    }
+}
+
 struct SnPostReference: Codable, Identifiable {
     let id: String
     let title: String?
@@ -177,6 +245,10 @@ struct SnPostReference: Codable, Identifiable {
         case id, title, content, publisher
         case createdAt = "created_at"
     }
+
+    /// A minimal shell from the reference's own id + summary (used to navigate
+    /// to the full detail, which refetches by id).
+    var shell: SnPost { SnPost(id: id, reference: self) }
 }
 
 struct SnActivityPubActor: Codable, Identifiable {

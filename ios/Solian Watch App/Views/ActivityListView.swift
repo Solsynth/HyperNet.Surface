@@ -56,11 +56,8 @@ struct ActivityListView: View {
                     ForEach(viewModel.activities) { activity in
                         if activity.isPost {
                             if let post = activity.decodePost() {
-                                NavigationLink(
-                                    destination: PostDetailView(post: post).environmentObject(appState)
-                                ) {
-                                    PostRowView(post: post)
-                                }
+                                PostRowView(post: post)
+                                    .environmentObject(appState)
                             } else {
                                 Text("Unknown activity")
                             }

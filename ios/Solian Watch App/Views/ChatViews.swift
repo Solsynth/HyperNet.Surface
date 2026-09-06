@@ -600,6 +600,19 @@ struct ChatRoomView: View {
                         scrollToLatest(proxy)
                     }
                 }
+                // A quote/forward tap asks to jump to a specific message. The
+                // referenced bubble anchors on `msg-<id>`; if it isn't loaded
+                // yet the timeline window may not contain it, so the request is
+                // simply cleared (the target stays where it is).
+                .onChange(of: viewModel.scrollToMessageId) { _, target in
+                    guard let target else { return }
+                    if viewModel.messages.contains(where: { $0.id == target }) {
+                        withAnimation { proxy.scrollTo("msg-\(target)", anchor: .center) }
+                        viewModel.clearScrollToMessage()
+                    } else {
+                        viewModel.clearScrollToMessage()
+                    }
+                }
                 // Track whether the newest end of the timeline is on screen:
                 // only then are live arrivals actually "read" (Flutter's
                 // `isAtLatestMessages`), which gates read receipts and hides
@@ -1000,6 +1013,8 @@ struct MessageGroupView: View {
             ForEach(group) { message in
                 MessageBubbleView(message: message, isOwn: isOwn, viewModel: viewModel)
                     .environmentObject(appState)
+                    // Stable anchor so a quote/forward tap can scroll to it.
+                    .id("msg-\(message.id)")
             }
         }
         .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
@@ -1136,21 +1151,28 @@ struct QuoteReferenceView: View {
     
     var body: some View {
         if let quoted = viewModel.referencedMessages[messageId] {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Image(systemName: isReply ? "arrowshape.turn.up.left" : "arrowshape.turn.up.right")
-                        .font(.system(size: 10))
-                    Text(isReply ? String(format: L10n.chatRoomRepliedTo, quoted.sender.displayName) : String(format: L10n.chatRoomForwardedFrom, quoted.sender.displayName))
-                        .font(.system(size: 10, weight: .semibold))
-                        .lineLimit(1)
+            Button {
+                viewModel.requestScrollToMessage(messageId)
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: isReply ? "arrowshape.turn.up.left" : "arrowshape.turn.up.right")
+                            .font(.system(size: 10))
+                        Text(isReply ? String(format: L10n.chatRoomRepliedTo, quoted.sender.displayName) : String(format: L10n.chatRoomForwardedFrom, quoted.sender.displayName))
+                            .font(.system(size: 10, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                    if let content = quoted.content, !content.isEmpty {
+                        Text(content)
+                            .font(.system(size: 11))
+                            .lineLimit(2)
+                            .foregroundColor(.primary.opacity(0.85))
+                    }
                 }
-                if let content = quoted.content, !content.isEmpty {
-                    Text(content)
-                        .font(.system(size: 11))
-                        .lineLimit(2)
-                        .foregroundColor(.primary.opacity(0.85))
-                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isReply ? L10n.chatRoomRepliedToMessage : L10n.chatRoomForwardedMessage)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))

@@ -189,6 +189,11 @@
 "post.bookmark" = "收藏";
 "post.removeBookmark" = "取消收藏";
 "post.unknownActivity" = "未知活動";
+"link.openHere" = "在此處開啟";
+"link.openOnPhone" = "在你的 iPhone 上開啟";
+"link.sendingToPhone" = "正在傳送到你的 iPhone…";
+"link.openedOnPhone" = "已在你 iPhone 上開啟";
+"link.phoneUnreachable" = "你的 iPhone 無法連線";
 
 /* MARK: - ComposePostView */
 "compose.newPost" = "新貼文";

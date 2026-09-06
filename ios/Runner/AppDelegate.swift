@@ -522,6 +522,26 @@ import flutter_callkit_incoming
         emitPendingDeepLinkIfNeeded()
         return true
     }
+
+    /// Routes a URL string the watch handed over (a notification `action_uri`
+    /// or an external link) into the app's pending-deep-link channel. Mirrors
+    /// [handleIncomingDeepLink] so the WatchConnectivityService can reuse the
+    /// same path without needing the active app delegate instance.
+    static func routeWatchDeepLink(_ url: URL) -> Bool {
+        let appDelegate = AppDelegate.shared
+        let isSolianLink = url.scheme == SharedConstants.urlScheme
+        let isSolianWebLink =
+        (url.scheme == "http" || url.scheme == "https") &&
+        url.host == "solian.app"
+        guard isSolianLink || isSolianWebLink else {
+            return false
+        }
+        let urlString = url.absoluteString
+        UserDefaults.shared.set(urlString, forKey: SharedConstants.pendingDeepLinkUrlKey)
+        UserDefaults.shared.synchronize()
+        appDelegate?.emitPendingDeepLinkIfNeeded()
+        return true
+    }
     
     private func emitPendingDeepLinkIfNeeded() {
         guard let urlString = UserDefaults.shared.string(forKey: SharedConstants.pendingDeepLinkUrlKey),
@@ -798,6 +818,31 @@ final class WatchConnectivityService: NSObject, WCSessionDelegate {
             return
         }
 
+        // The watch asks the phone to open a URL (external link, or a
+        // notification's `action_uri`). The watch has no browser/deep-link
+        // router, so it hands the URL here. A bare `/path` action_uri is
+        // normalized to a solian web URL and routed through the app's deep
+        // link channel; arbitrary http(s) URLs open in Safari.
+        if let request = message["request"] as? String, request == "openUrl",
+           let urlString = message["url"] as? String {
+            let resolved = Self.resolveWatchActionUri(urlString)
+            // A solian-facing URL routes into the app's deep-link channel; an
+            // arbitrary http(s) URL opens the phone's browser.
+            if let resolved, AppDelegate.routeWatchDeepLink(resolved) {
+                replyHandler(["opened": true])
+                return
+            }
+            if let url = URL(string: urlString) {
+                DispatchQueue.main.async {
+                    UIApplication.shared.open(url)
+                }
+                replyHandler(["opened": true])
+                return
+            }
+            replyHandler(["opened": false])
+            return
+        }
+
         // The watch started an OAuth device-flow sign-in and asks the phone to
         // complete approval. When the phone holds a valid session it approves
         // directly against the server; otherwise it falls back to opening the
@@ -882,5 +927,33 @@ final class WatchConnectivityService: NSObject, WCSessionDelegate {
                 print("[iOS] Failed to send application context: \(error.localizedDescription)")
             }
         }
+    }
+
+    /// Normalizes a raw notification `action_uri` (or any URL) the watch hands
+    /// over for deep-linking, matching the Flutter `actionUriToRoutePath`
+    /// normalization: a bare `/path` or `solian://host/path` becomes the
+    /// canonical `https://solian.app/...` web URL that the app's deep-link
+    /// channel consumes. Returns nil when the value can't be resolved.
+    static func resolveWatchActionUri(_ rawValue: String) -> URL? {
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.isEmpty { return nil }
+
+        // Bare in-app path like `/posts/123`.
+        if value.hasPrefix("/") {
+            return URL(string: "https://solian.app\(value)")
+        }
+
+        // `solian://host/path` → `https://solian.app/host/path`.
+        if value.lowercased().hasPrefix("solian://") {
+            let authority = String(value.dropFirst("solian://".count))
+            return URL(string: "https://solian.app/\(authority)")
+        }
+
+        // `https://solian.app/...` or any http(s) — pass through unchanged.
+        if value.lowercased().hasPrefix("https://") || value.lowercased().hasPrefix("http://") {
+            return URL(string: value)
+        }
+
+        return nil
     }
 }

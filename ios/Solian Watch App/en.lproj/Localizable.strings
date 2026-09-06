@@ -189,6 +189,11 @@
 "post.bookmark" = "Bookmark";
 "post.removeBookmark" = "Remove bookmark";
 "post.unknownActivity" = "Unknown activity";
+"link.openHere" = "Open here";
+"link.openOnPhone" = "Open on your iPhone";
+"link.sendingToPhone" = "Sending to your iPhone…";
+"link.openedOnPhone" = "Opened on your iPhone";
+"link.phoneUnreachable" = "Your iPhone isn't reachable";
 
 /* MARK: - ComposePostView */
 "compose.newPost" = "New Post";

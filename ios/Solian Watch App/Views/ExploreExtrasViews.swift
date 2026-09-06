@@ -445,11 +445,8 @@ struct PostQueryListView: View {
             } else {
                 List {
                     ForEach(posts) { post in
-                        NavigationLink(
-                            destination: PostDetailView(post: post).environmentObject(appState)
-                        ) {
-                            PostRowView(post: post)
-                        }
+                        PostRowView(post: post)
+                            .environmentObject(appState)
                     }
                     if hasMore {
                         Button(isLoadingMore ? "Loading…" : "Load More") {
