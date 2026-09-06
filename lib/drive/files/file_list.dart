@@ -14,7 +14,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:island/core/utils/format.dart';
 import 'package:island/core/utils/share_utils.dart';
+import 'package:island/drive/widgets/usage_overview.dart';
 import 'package:island/drive/screens/file_list.dart';
 import 'package:island/drive/drive_service.dart';
 import 'package:island/workspaces/workspace_management.dart';
@@ -23,6 +25,7 @@ import 'package:island/core/services/responsive.dart';
 import 'package:island/core/network.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/core/widgets/content/cloud_file_actions_sheet.dart';
 import 'package:island/core/widgets/content/file_viewer_contents.dart';
 import 'package:island/shared/widgets/responsive_sidebar.dart';
@@ -724,7 +727,11 @@ class FileListScreen extends HookConsumerWidget {
                             }
                           },
                   )
-                : const SizedBox.shrink(),
+                : _DriveStorageStatusBar(
+                    usage: usage,
+                    onTapDetails: () =>
+                        _showUsageSheet(context, usage, quota),
+                  ),
           ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -1358,6 +1365,24 @@ class FileListScreen extends HookConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showUsageSheet(
+    BuildContext context,
+    Map<String, dynamic>? usage,
+    Map<String, dynamic>? quota,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SheetScaffold(
+        titleText: 'usageOverview'.tr(),
+        child: UsageOverviewWidget(
+          usage: usage,
+          quota: quota,
+        ).padding(horizontal: 8, vertical: 16),
       ),
     );
   }
@@ -2084,6 +2109,94 @@ class _DriveSelectionStatusBar extends StatelessWidget {
                 icon: const Icon(Symbols.close),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DriveStorageStatusBar extends StatelessWidget {
+  final Map<String, dynamic>? usage;
+  final VoidCallback onTapDetails;
+
+  const _DriveStorageStatusBar({
+    required this.usage,
+    required this.onTapDetails,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (usage == null) return const SizedBox.shrink();
+
+    final nonNullUsage = usage!;
+    final totalQuotaMb = nonNullUsage['total_quota'] as int? ?? 0;
+    final usedQuotaMb = nonNullUsage['used_quota'] as num? ?? 0;
+    final usedBytes =
+        (nonNullUsage['used_bytes'] as num?)?.toInt() ??
+        (usedQuotaMb * 1024 * 1024).round();
+    final totalBytes =
+        (nonNullUsage['limit_bytes'] as num?)?.toInt() ??
+        (nonNullUsage['total_bytes'] as num?)?.toInt() ??
+        totalQuotaMb * 1024 * 1024;
+    final ratio = totalBytes > 0
+        ? (usedBytes / totalBytes).clamp(0.0, 1.0)
+        : 0.0;
+
+    final scheme = Theme.of(context).colorScheme;
+    final border = scheme.outlineVariant.withValues(alpha: 0.55);
+
+    return Material(
+      color: scheme.surfaceContainerLow,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: border)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            8,
+            8 + MediaQuery.paddingOf(context).bottom,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 520;
+              return Row(
+                mainAxisSize: MainAxisSize.max,
+                spacing: 12,
+                children: [
+                  Icon(Symbols.storage, size: 18, color: scheme.primary),
+                  if (!isCompact)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: SizedBox(
+                        width: 120,
+                        child: LinearProgressIndicator(
+                          value: ratio,
+                          minHeight: 8,
+                        ),
+                      ),
+                    ),
+                  const Spacer(),
+                  Text(
+                    '${formatFileSize(usedBytes)} / ${formatFileSize(totalBytes)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (!isCompact)
+                    Text(
+                      '${(ratio * 100).toStringAsFixed(1)}%',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  IconButton(
+                    onPressed: onTapDetails,
+                    tooltip: 'viewDetails'.tr(),
+                    icon: const Icon(Symbols.bar_chart),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

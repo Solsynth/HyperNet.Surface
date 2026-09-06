@@ -9,7 +9,7 @@ import 'package:solar_network_sdk/src/models/drive/quota.dart';
 /// API for cloud drive/storage endpoints (/drive) and account quota (Valve).
 ///
 /// Covers files, folders, upload tasks, bundles, pools (DysonFS), and
-/// account quota/billing (Valve's /api/billing/quota).
+/// account quota/billing (Valve's /valve/billing/quota).
 class DriveApi extends BaseApi {
   DriveApi(super.dio);
 
@@ -796,7 +796,7 @@ class DriveApi extends BaseApi {
   /// Returns the user's storage quota breakdown (account quota from Valve).
   Future<Map<String, dynamic>> getQuota() async {
     final response = await get<Map<String, dynamic>>(
-      '/api/billing/quota',
+      '/valve/billing/quota',
     );
     return response.data!;
   }
@@ -808,7 +808,7 @@ class DriveApi extends BaseApi {
     int take = 20,
   }) async {
     final response = await get<List<dynamic>>(
-      '/api/billing/quota/records',
+      '/valve/billing/quota/records',
       queryParameters: {'expired': expired, 'offset': offset, 'take': take},
     );
     final totalCount = getTotalCount(response.headers);
@@ -823,7 +823,7 @@ class DriveApi extends BaseApi {
   /// quantities) from Valve.
   Future<SnQuotaPurchaseConfig> getQuotaPurchaseConfig() async {
     final response = await get<Map<String, dynamic>>(
-      '/api/billing/quota/purchase',
+      '/valve/billing/quota/purchase',
     );
     return SnQuotaPurchaseConfig.fromJson(response.data!);
   }
@@ -837,7 +837,7 @@ class DriveApi extends BaseApi {
     required int quantityGb,
   }) async {
     final response = await post<Map<String, dynamic>>(
-      '/api/billing/quota/purchase',
+      '/valve/billing/quota/purchase',
       data: {'quantity_gb': quantityGb},
     );
     return SnQuotaOrder.fromJson(response.data!);

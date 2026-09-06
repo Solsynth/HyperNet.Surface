@@ -13,14 +13,14 @@ import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
-/// Quota purchase pricing, from `GET /api/billing/quota/purchase` (Valve).
+/// Quota purchase pricing, from `GET /valve/billing/quota/purchase` (Valve).
 final quotaPurchaseConfigProvider = FutureProvider<SnQuotaPurchaseConfig>((
   ref,
 ) {
   return ref.read(solarNetworkClientProvider).drive.getQuotaPurchaseConfig();
 });
 
-/// The user's quota purchase records from `GET /api/billing/quota/records` (Valve).
+/// The user's quota purchase records from `GET /valve/billing/quota/records` (Valve).
 final quotaPurchaseRecordsProvider = FutureProvider<List<QuotaPurchaseRecord>>((
   ref,
 ) async {
