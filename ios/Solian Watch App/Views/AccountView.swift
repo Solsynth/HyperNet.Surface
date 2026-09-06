@@ -203,6 +203,25 @@ struct AccountView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+
+                    // Account QR (Solarpass)
+                    NavigationLink(
+                        destination: AccountQrView(user: user)
+                            .environmentObject(appState)
+                    ) {
+                        HStack {
+                            Label(L10n.accountQr, systemImage: "qrcode")
+                                .font(.subheadline)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding()
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.gray.opacity(0.12)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.accountQr)
                 }
                 .padding()
                 // Load images when user data is available

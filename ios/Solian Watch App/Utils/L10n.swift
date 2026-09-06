@@ -45,6 +45,12 @@ public enum L10n {
     static let exploreShuffle = NSLocalizedString("explore.shuffle", comment: "Shuffle posts button")
     static let explorePublishers = NSLocalizedString("explore.publishers", comment: "Manage publishers button")
     static let exploreBrowseCategories = NSLocalizedString("explore.browseCategories", comment: "Browse categories button")
+    static let exploreSearch = NSLocalizedString("explore.search", comment: "Search posts button")
+
+    // MARK: - Search
+    static let searchPosts = NSLocalizedString("search.posts", comment: "Search posts title")
+    static let searchPlaceholder = NSLocalizedString("search.placeholder", comment: "Search text field placeholder")
+    static let searchHint = NSLocalizedString("search.hint", comment: "Search hint when empty")
 
     // MARK: - NotificationView
     static let notificationsTitle = NSLocalizedString("notifications.title", comment: "Notifications title")
@@ -75,6 +81,11 @@ public enum L10n {
     static let accountNoAccountData = NSLocalizedString("account.noAccountData", comment: "No account data")
     static let accountSignOut = NSLocalizedString("account.signOut", comment: "Sign out")
     static let accountSignOutAccessibility = NSLocalizedString("account.signOut.accessibility", comment: "Sign out accessibility")
+
+    // MARK: - AccountQrView
+    static let accountQr = NSLocalizedString("account.qr", comment: "Account QR row label")
+    static let accountQrTitle = NSLocalizedString("account.qr.title", comment: "Account QR navigation title")
+    static let accountQrShare = NSLocalizedString("account.qr.share", comment: "Share account QR link")
 
     // MARK: - CheckInView
     static let checkInTitle = NSLocalizedString("checkin.title", comment: "Check-in title")
@@ -130,6 +141,18 @@ public enum L10n {
     static let chatRoomRepliedToMessage = NSLocalizedString("chatRoom.repliedToMessage", comment: "Replied to message")
     static let chatRoomForwardedMessage = NSLocalizedString("chatRoom.forwardedMessage", comment: "Forwarded message")
     static let chatRoomMoreAttachments = NSLocalizedString("chatRoom.moreAttachments", comment: "More attachments")
+
+    // MARK: - Message Action Menu
+    static let chatRoomReply = NSLocalizedString("chatRoom.reply", comment: "Reply")
+    static let chatRoomForward = NSLocalizedString("chatRoom.forward", comment: "Forward")
+    static let chatRoomEdit = NSLocalizedString("chatRoom.edit", comment: "Edit")
+    static let chatRoomDelete = NSLocalizedString("chatRoom.delete", comment: "Delete")
+    static let chatRoomReact = NSLocalizedString("chatRoom.react", comment: "React")
+    static let chatRoomPin = NSLocalizedString("chatRoom.pin", comment: "Pin")
+    static let chatRoomCopy = NSLocalizedString("chatRoom.copy", comment: "Copy")
+    static let chatRoomResend = NSLocalizedString("chatRoom.resend", comment: "Resend")
+    static let chatRoomDeleteConfirm = NSLocalizedString("chatRoom.deleteConfirm", comment: "Delete this message?")
+    static let chatRoomActions = NSLocalizedString("chatRoom.actions", comment: "Actions")
 
     // MARK: - VoiceMessageView
     static let voicePlay = NSLocalizedString("voice.play", comment: "Play voice message")

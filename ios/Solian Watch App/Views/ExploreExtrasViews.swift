@@ -411,6 +411,7 @@ struct PostQueryListView: View {
     var categorySlugs: [String] = []
     var tagSlugs: [String] = []
     var shuffle = false
+    var query: String? = nil
 
     @EnvironmentObject var appState: AppState
     @State private var posts: [SnPost] = []
@@ -461,7 +462,7 @@ struct PostQueryListView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .task(id: queryKey) {
-            if !hasLoadedOnce { await load() }
+            await load()
         }
         .refreshable { await load() }
     }
@@ -470,7 +471,8 @@ struct PostQueryListView: View {
         [publisherNames.joined(separator: ","),
          categorySlugs.joined(separator: ","),
          tagSlugs.joined(separator: ","),
-         shuffle ? "s" : ""].joined(separator: "|")
+         shuffle ? "s" : "",
+         query ?? ""].joined(separator: "|")
     }
 
     private var hasMore: Bool {
@@ -491,6 +493,7 @@ struct PostQueryListView: View {
                 categories: categorySlugs,
                 tags: tagSlugs,
                 shuffle: shuffle,
+                queryTerm: query,
                 token: token,
                 serverUrl: serverUrl
             )
@@ -516,6 +519,7 @@ struct PostQueryListView: View {
                 categories: categorySlugs,
                 tags: tagSlugs,
                 shuffle: shuffle,
+                queryTerm: query,
                 token: token,
                 serverUrl: serverUrl
             )
@@ -524,5 +528,58 @@ struct PostQueryListView: View {
         } catch {
             print("[watchOS] load more posts failed: \(error)")
         }
+    }
+}
+
+// MARK: - Post search
+
+/// Text-field–driven post search screen. The user types a query, and the
+/// debounced results are shown via `PostQueryListView(query:)`.
+struct SearchPostView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var searchText = ""
+    @State private var debouncedQuery: String? = nil
+    @FocusState private var isTextFieldFocused: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TextField(L10n.searchPlaceholder, text: $searchText)
+                .padding(.bottom, 8)
+                .focused($isTextFieldFocused)
+                .onSubmit {
+                    debouncedQuery = searchText.isEmpty ? nil : searchText
+                }
+                .onChange(of: searchText) { _, newValue in
+                    // Simple debounce: update debounced query after a short delay.
+                    let trimmed = newValue.trimmingCharacters(in: .whitespaces)
+                    if trimmed.isEmpty {
+                        debouncedQuery = nil
+                    } else {
+                        debouncedQuery = trimmed
+                    }
+                }
+
+            if let query = debouncedQuery, !query.isEmpty {
+                PostQueryListView(
+                    title: L10n.searchPosts,
+                    query: query
+                )
+                .environmentObject(appState)
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                    Text(L10n.searchHint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .navigationTitle(L10n.searchPosts)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { isTextFieldFocused = true }
     }
 }

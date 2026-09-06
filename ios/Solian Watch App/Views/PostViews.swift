@@ -52,10 +52,17 @@ struct PostAuthorHeader: View {
                     .foregroundColor(.gray)
             }
             VStack(alignment: .leading, spacing: 0) {
-                Text(displayName)
-                    .font(isCompact ? .caption : .subheadline)
-                    .bold()
-                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Text(displayName)
+                        .font(isCompact ? .caption : .subheadline)
+                        .bold()
+                        .lineLimit(1)
+                    if let createdAt = post.createdAt {
+                        Text(createdAt, style: .relative)
+                            .font(.system(size: isCompact ? 9 : 10))
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 if post.boostedAt != nil, let booster = boostedByName {
                     Text(booster)
                         .font(.system(size: isCompact ? 9 : 10))

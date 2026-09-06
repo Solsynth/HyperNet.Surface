@@ -267,6 +267,7 @@ class NetworkService {
         tags: [String]? = nil,
         shuffle: Bool = false,
         replies: Bool = false,
+        queryTerm: String? = nil,
         token: String,
         serverUrl: String
     ) async throws -> PostListResponse {
@@ -298,6 +299,9 @@ class NetworkService {
         }
         for tag in tags ?? [] {
             query.append(URLQueryItem(name: "tags", value: tag))
+        }
+        if let searchTerm = queryTerm, !searchTerm.isEmpty {
+            query.append(URLQueryItem(name: "query", value: searchTerm))
         }
         components.queryItems = query
 
@@ -1845,6 +1849,74 @@ class NetworkService {
     /// Marks a room as read via WebSocket (`messages.read`).
     func sendReadReceipt(chatRoomId: String) {
         sendChatPacket(type: "messages.read", data: ["chat_room_id": chatRoomId])
+    }
+
+    // MARK: - Chat Message Actions
+
+    /// DELETE /messager/chat/{roomId}/messages/{messageId}
+    func deleteChatMessage(chatRoomId: String, messageId: String, token: String, serverUrl: String) async throws {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent("/messager/chat/\(chatRoomId)/messages/\(messageId)")
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    /// PATCH /messager/chat/{roomId}/messages/{messageId} — edit text content.
+    func editChatMessage(chatRoomId: String, messageId: String, content: String, token: String, serverUrl: String) async throws {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent("/messager/chat/\(chatRoomId)/messages/\(messageId)")
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["content": content])
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    /// POST /messager/chat/{roomId}/messages/{messageId}/reactions — react.
+    func reactToChatMessage(chatRoomId: String, messageId: String, symbol: String, attitude: Int, token: String, serverUrl: String) async throws {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent("/messager/chat/\(chatRoomId)/messages/\(messageId)/reactions")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["symbol": symbol, "attitude": attitude])
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    /// POST /messager/chat/{roomId}/pins — pin a message.
+    func pinChatMessage(chatRoomId: String, messageId: String, token: String, serverUrl: String) async throws {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent("/messager/chat/\(chatRoomId)/pins")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["message_id": messageId])
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
     }
 
     /// Broadcasts a typing indicator (`messages.typing`), throttled by the caller.

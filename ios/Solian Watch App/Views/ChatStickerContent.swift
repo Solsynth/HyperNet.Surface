@@ -147,7 +147,6 @@ private struct MessageText: View {
                     .font(.system(size: 14))
                     .foregroundColor(color)
                     .underline()
-                    .fixedSize()
             }
             .buttonStyle(.plain)
             .accessibilityAddTraits(.isLink)
@@ -156,7 +155,6 @@ private struct MessageText: View {
             Text(text)
                 .font(.system(size: 14))
                 .foregroundColor(color)
-                .fixedSize()
         }
     }
 

@@ -67,6 +67,11 @@
 "account.signOut" = "退出登录";
 "account.signOut.accessibility" = "退出此手表";
 
+/* MARK: - AccountQrView */
+"account.qr" = "账户二维码";
+"account.qr.title" = "账户二维码";
+"account.qr.share" = "分享账户";
+
 /* MARK: - CheckInView */
 "checkin.title" = "签到";
 "checkin.couldntLoad" = "无法加载签到";
@@ -125,6 +130,18 @@
 "chatRoom.repliedToMessage" = "回复了一条消息";
 "chatRoom.forwardedMessage" = "转发的消息";
 "chatRoom.moreAttachments" = "%d+ 更多";
+
+/* MARK: - Message Action Menu */
+"chatRoom.reply" = "回复";
+"chatRoom.forward" = "转发";
+"chatRoom.edit" = "编辑";
+"chatRoom.delete" = "删除";
+"chatRoom.react" = "回应";
+"chatRoom.pin" = "置顶";
+"chatRoom.copy" = "复制";
+"chatRoom.resend" = "重新发送";
+"chatRoom.deleteConfirm" = "删除这条消息？";
+"chatRoom.actions" = "操作";
 
 /* MARK: - VoiceMessageView */
 "voice.play" = "播放语音消息";
@@ -309,3 +326,9 @@
 "fortune.study" = "学业";
 "fortune.work" = "事业";
 "fortune.health" = "健康";
+
+/* MARK: - Search */
+"explore.search" = "搜索帖子";
+"search.posts" = "搜索帖子";
+"search.placeholder" = "搜索...";
+"search.hint" = "输入以搜索帖子";

@@ -16,6 +16,7 @@ struct ExploreView: View {
     @State private var showPublishers = false
     @State private var showCategoriesTags = false
     @State private var showShuffle = false
+    @State private var showSearch = false
 
     var body: some View {
         NavigationStack {
@@ -25,7 +26,8 @@ struct ExploreView: View {
                     onCompose: { isComposing = true },
                     onShuffle: { showShuffle = true },
                     onPublishers: { showPublishers = true },
-                    onBrowse: { showCategoriesTags = true }
+                    onBrowse: { showCategoriesTags = true },
+                    onSearch: { showSearch = true }
                 )
                 .environmentObject(appState)
                 .navigationDestination(isPresented: $showPublishers) {
@@ -37,6 +39,9 @@ struct ExploreView: View {
                 .navigationDestination(isPresented: $showShuffle) {
                     PostQueryListView(title: L10n.exploreShuffle, shuffle: true)
                         .environmentObject(appState)
+                }
+                .navigationDestination(isPresented: $showSearch) {
+                    SearchPostView().environmentObject(appState)
                 }
             } else {
                 VStack {
@@ -64,6 +69,7 @@ private struct FeedPageView: View {
     let onShuffle: () -> Void
     let onPublishers: () -> Void
     let onBrowse: () -> Void
+    let onSearch: () -> Void
 
     var body: some View {
         ActivityListView(filter: filter, header: AnyView(exploreOptions))
@@ -83,6 +89,15 @@ private struct FeedPageView: View {
     private var exploreOptions: some View {
         HStack(spacing: 10) {
             Spacer()
+            Button(action: onSearch) {
+                Image(systemName: "magnifyingglass")
+                    .frame(width: 38, height: 38)
+            }
+            .buttonStyle(.bordered)
+            .tint(.secondary)
+            .clipShape(Circle())
+            .accessibilityLabel(L10n.exploreSearch)
+
             Button(action: onShuffle) {
                 Image(systemName: "shuffle")
                     .frame(width: 38, height: 38)

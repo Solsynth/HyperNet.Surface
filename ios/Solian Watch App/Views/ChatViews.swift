@@ -613,6 +613,11 @@ struct ChatRoomView: View {
                         viewModel.clearScrollToMessage()
                     }
                 }
+                // Scroll to compose bar when reply/forward starts so the
+                // indicator is visible.
+                .onChange(of: viewModel.replyingTo?.id) { _, _ in
+                    scrollToLatest(proxy)
+                }
                 // Track whether the newest end of the timeline is on screen:
                 // only then are live arrivals actually "read" (Flutter's
                 // `isAtLatestMessages`), which gates read receipts and hides
@@ -810,14 +815,55 @@ struct ChatRoomView: View {
     /// navigation/floating layer); on older watchOS they fall back to a flat
     /// gray fill.
     private var composeBar: some View {
-        HStack(alignment: .center, spacing: 12) {
-            plusButton
-            messageField
-            if showSendButton {
-                sendButton
+        VStack(spacing: 0) {
+            if let replyTarget = viewModel.replyingTo {
+                replyIndicator(replyTarget)
             }
+            HStack(alignment: .center, spacing: 12) {
+                plusButton
+                messageField
+                if showSendButton {
+                    sendButton
+                }
+            }
+            .padding(.vertical, 6)
         }
-        .padding(.vertical, 6)
+    }
+
+    /// Compact reply preview bar above the composer: shows the replied
+    /// message's sender + content preview with an ✕ to cancel.
+    private func replyIndicator(_ target: SnChatMessage) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "arrowshape.turn.up.left.fill")
+                .font(.system(size: 10))
+                .foregroundColor(.accentColor)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(target.sender.displayName)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.accentColor)
+                    .lineLimit(1)
+                if let content = target.content, !content.isEmpty {
+                    Text(content)
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 0)
+            Button {
+                WKInterfaceDevice.current().play(.click)
+                viewModel.clearActionState()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.horizontal, 6)
     }
     
     @ViewBuilder
@@ -1011,10 +1057,14 @@ struct MessageGroupView: View {
                 header
             }
             ForEach(group) { message in
-                MessageBubbleView(message: message, isOwn: isOwn, viewModel: viewModel)
-                    .environmentObject(appState)
-                    // Stable anchor so a quote/forward tap can scroll to it.
-                    .id("msg-\(message.id)")
+                VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
+                    MessageBubbleView(message: message, isOwn: isOwn, viewModel: viewModel)
+                        .environmentObject(appState)
+                        // Stable anchor so a quote/forward tap can scroll to it.
+                        .id("msg-\(message.id)")
+                    MessageReactionChipsView(message: message, viewModel: viewModel)
+                        .environmentObject(appState)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
@@ -1030,16 +1080,14 @@ struct MessageBubbleView: View {
     let isOwn: Bool
     @ObservedObject var viewModel: ChatRoomViewModel
     @EnvironmentObject var appState: AppState
-    
+    @State private var showDeleteConfirmation = false
+    @State private var showActionMenu = false
+
     private var bubbleColor: Color {
-        // Standalone sticker rows get a subdued tint (the image carries the
-        // visual weight) — Flutter's sticker bubble is likewise a light
-        // container, not the full text-bubble accent.
         if contentIsStandaloneSticker {
             return (isOwn ? Color.accentColor : Color.gray)
                 .opacity(isOwn ? 0.18 : 0.08)
         }
-        // Pending messages render semi-transparent (Flutter's optimistic state).
         if status == .pending {
             return (isOwn ? Color.accentColor : Color.gray)
                 .opacity(isOwn ? 0.4 : 0.2)
@@ -1052,16 +1100,13 @@ struct MessageBubbleView: View {
     private var status: ChatRoomViewModel.MessageSendStatus? {
         viewModel.messageStatus[message.id]
     }
-    /// True when the body is exactly one sticker (renders large, subdued
-    /// bubble, no quote/attachment chrome).
     private var contentIsStandaloneSticker: Bool {
         guard let content = message.content, !content.isEmpty else { return false }
         return isStandaloneStickerContent(content)
     }
-    
+
     var body: some View {
         if message.isDeletedRow {
-            // Deleted messages collapse to an inline system row, not a bubble.
             HStack(spacing: 4) {
                 Image(systemName: "trash")
                     .font(.system(size: 11))
@@ -1106,9 +1151,30 @@ struct MessageBubbleView: View {
             .foregroundColor(textColor)
             .opacity(status == .pending ? 0.9 : 1.0)
             .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
+            .contentShape(Rectangle())
+            .onLongPressGesture(minimumDuration: 0.5) {
+                WKInterfaceDevice.current().play(.click)
+                showActionMenu = true
+            }
+            .sheet(isPresented: $showActionMenu) {
+                MessageActionMenuView(
+                    message: message,
+                    isOwn: isOwn,
+                    status: status,
+                    viewModel: viewModel,
+                    showDeleteConfirmation: $showDeleteConfirmation
+                )
+                .environmentObject(appState)
+            }
+            .alert(L10n.chatRoomDeleteConfirm, isPresented: $showDeleteConfirmation) {
+                Button(L10n.chatRoomDelete, role: .destructive) {
+                    Task { await viewModel.deleteMessage(message) }
+                }
+                Button("Cancel", role: .cancel) { }
+            }
         }
     }
-    
+
     /// Status footer: a spinner while pending, an error mark on failure,
     /// "edited" for edited messages (Flutter's MessageIndicators).
     @ViewBuilder
@@ -1137,6 +1203,198 @@ struct MessageBubbleView: View {
                     .font(.system(size: 10))
                     .foregroundColor(textColor.opacity(0.7))
             }
+        }
+    }
+}
+
+// MARK: - Message Reaction Chips
+
+/// Aggregated reaction counts per symbol, and which symbols the current user
+/// has reacted with. Computed from `SnChatMessage.reactions`.
+private struct ReactionAggregation {
+    let counts: [String: Int]
+    let madeByMe: Set<String>
+
+    init(reactions: [SnChatReaction], currentAccountId: String?) {
+        var counts: [String: Int] = [:]
+        var madeByMe = Set<String>()
+        for r in reactions {
+            counts[r.symbol, default: 0] += 1
+            if r.senderId == currentAccountId {
+                madeByMe.insert(r.symbol)
+            }
+        }
+        self.counts = counts
+        self.madeByMe = madeByMe
+    }
+}
+
+/// Emoji icon for a known reaction symbol. Custom sticker reactions (containing
+/// `+`) are rendered as a placeholder since the sticker API isn't wired yet.
+private func reactionEmoji(for symbol: String) -> String {
+    switch symbol {
+    case "thumb_up": return "👍"
+    case "thumb_down": return "👎"
+    case "cry": return "😭"
+    case "confuse": return "🧐"
+    case "hello": return "👋"
+    case "shock": return "😱"
+    case "speechless": return "😶"
+    case "ridicule": return "😏"
+    case "salute": return "🫡"
+    case "clap": return "👏"
+    case "laugh": return "😂"
+    case "angry": return "😡"
+    case "party": return "🎉"
+    case "pray": return "🙏"
+    case "heart": return "❤️"
+    default: return symbol.contains("+") ? "⭐" : "❓"
+    }
+}
+
+/// Compact horizontal row of reaction chips below a message bubble. Each chip
+/// shows the emoji + count; tapping toggles the user's reaction.
+private struct MessageReactionChipsView: View {
+    let message: SnChatMessage
+    @ObservedObject var viewModel: ChatRoomViewModel
+    @EnvironmentObject var appState: AppState
+
+    private var aggregation: ReactionAggregation {
+        ReactionAggregation(reactions: message.reactions, currentAccountId: appState.currentAccountId)
+    }
+
+    var body: some View {
+        let agg = aggregation
+        if agg.counts.isEmpty {
+            EmptyView()
+        } else {
+            let sorted = agg.counts.sorted { a, b in
+                if a.value != b.value { return a.value > b.value }
+                return a.key < b.key
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(sorted, id: \.key) { symbol, count in
+                        let isMade = agg.madeByMe.contains(symbol)
+                        Button {
+                            WKInterfaceDevice.current().play(.click)
+                            let attitude = symbol == "thumb_up" ? 0
+                                : symbol == "thumb_down" ? 2 : 1
+                            Task { await viewModel.reactToMessage(message, symbol: symbol, attitude: attitude) }
+                        } label: {
+                            HStack(spacing: 3) {
+                                Text(reactionEmoji(for: symbol))
+                                    .font(.system(size: 12))
+                                Text("\(count)")
+                                    .font(.system(size: 10, weight: .medium))
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                isMade ? Color.accentColor.opacity(0.2) : Color.gray.opacity(0.12),
+                                in: Capsule()
+                            )
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(
+                                        isMade ? Color.accentColor.opacity(0.5) : Color.gray.opacity(0.2),
+                                        lineWidth: 0.5
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+        }
+    }
+}
+
+// MARK: - Message Action Menu (Sheet)
+
+/// A watchOS-style action menu sheet shown on long-press of a message bubble.
+/// Presents a vertical list of actions (Reply, Forward, React, Edit, Delete,
+/// Pin) matching the Flutter app's `MessageActionSheet` but adapted for the
+/// small watch screen.
+struct MessageActionMenuView: View {
+    let message: SnChatMessage
+    let isOwn: Bool
+    let status: ChatRoomViewModel.MessageSendStatus?
+    @ObservedObject var viewModel: ChatRoomViewModel
+    @EnvironmentObject var appState: AppState
+    @Binding var showDeleteConfirmation: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            List {
+                // ── Primary actions ──
+                if !isOwn {
+                    Button {
+                        WKInterfaceDevice.current().play(.click)
+                        viewModel.startReply(message)
+                        dismiss()
+                    } label: {
+                        Label(L10n.chatRoomReply, systemImage: "arrowshape.turn.up.left")
+                    }
+                }
+                Button {
+                    WKInterfaceDevice.current().play(.click)
+                    viewModel.startForward(message)
+                    dismiss()
+                } label: {
+                    Label(L10n.chatRoomForward, systemImage: "arrowshape.turn.up.right")
+                }
+                Button {
+                    WKInterfaceDevice.current().play(.click)
+                    Task { await viewModel.reactToMessage(message, symbol: "heart", attitude: 1) }
+                    dismiss()
+                } label: {
+                    Label(L10n.chatRoomReact, systemImage: "heart")
+                }
+
+                // ── Author actions ──
+                if isOwn && message.type == "text" && !message.isDeletedRow {
+                    Button {
+                        WKInterfaceDevice.current().play(.click)
+                        viewModel.editingMessage = message
+                        viewModel.draft = message.content ?? ""
+                        dismiss()
+                    } label: {
+                        Label(L10n.chatRoomEdit, systemImage: "pencil")
+                    }
+                }
+                if isOwn && status == .failed {
+                    Button {
+                        WKInterfaceDevice.current().play(.click)
+                        Task { await viewModel.send() }
+                        dismiss()
+                    } label: {
+                        Label(L10n.chatRoomResend, systemImage: "arrow.clockwise")
+                    }
+                }
+                if isOwn && !message.id.hasPrefix("pending_") {
+                    Button(role: .destructive) {
+                        WKInterfaceDevice.current().play(.click)
+                        dismiss()
+                        showDeleteConfirmation = true
+                    } label: {
+                        Label(L10n.chatRoomDelete, systemImage: "trash")
+                    }
+                }
+
+                // ── Utility ──
+                Button {
+                    WKInterfaceDevice.current().play(.click)
+                    Task { await viewModel.pinMessage(message) }
+                    dismiss()
+                } label: {
+                    Label(L10n.chatRoomPin, systemImage: "pin")
+                }
+            }
+            .navigationTitle(L10n.chatRoomActions)
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

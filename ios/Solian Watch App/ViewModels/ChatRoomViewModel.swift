@@ -47,6 +47,13 @@ final class ChatRoomViewModel: ObservableObject {
     /// live unread count. Reset to 0 when the room is opened.
     @Published private(set) var unreadCount = 0
 
+    /// The message currently being edited (set when user taps Edit in context menu).
+    @Published var editingMessage: SnChatMessage?
+    /// The message currently being replied to (set when user taps Reply).
+    @Published var replyingTo: SnChatMessage?
+    /// The message currently being forwarded (set when user taps Forward).
+    @Published var forwardingMessage: SnChatMessage?
+
     enum MessageSendStatus: Equatable {
         case pending
         case failed
@@ -321,6 +328,104 @@ final class ChatRoomViewModel: ObservableObject {
         scrollToMessageId = nil
     }
 
+    // MARK: - Message Actions
+
+    /// Deletes a message. For pending/failed messages, removes locally.
+    /// For confirmed messages, calls the server API.
+    func deleteMessage(_ message: SnChatMessage) async {
+        // Pending/failed messages — just remove locally.
+        if message.id.hasPrefix("pending_") || messageStatus[message.id] == .failed {
+            messages.removeAll { $0.id == message.id }
+            messageStatus.removeValue(forKey: message.id)
+            persist()
+            return
+        }
+        guard let token = appState.token, let serverUrl = appState.serverUrl else { return }
+        do {
+            try await appState.networkService.deleteChatMessage(
+                chatRoomId: room.id,
+                messageId: message.id,
+                token: token,
+                serverUrl: serverUrl
+            )
+            // Optimistic removal; the WS `messages.delete` echo will also
+            // remove it, but removing here gives instant feedback.
+            messages.removeAll { $0.id == message.id }
+            persist()
+        } catch {
+            print("[ChatRoomViewModel] deleteMessage failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Edits a text message's content. On success the server broadcasts a
+    /// `messages.update` WebSocket event that updates the timeline.
+    func editMessage(_ message: SnChatMessage, newContent: String) async {
+        guard let token = appState.token, let serverUrl = appState.serverUrl else { return }
+        do {
+            try await appState.networkService.editChatMessage(
+                chatRoomId: room.id,
+                messageId: message.id,
+                content: newContent,
+                token: token,
+                serverUrl: serverUrl
+            )
+            editingMessage = nil
+        } catch {
+            print("[ChatRoomViewModel] editMessage failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Toggles a reaction on a message. Mirrors Flutter's
+    /// `MessagesNotifier.reactToMessage`.
+    func reactToMessage(_ message: SnChatMessage, symbol: String, attitude: Int = 1) async {
+        guard let token = appState.token, let serverUrl = appState.serverUrl else { return }
+        do {
+            try await appState.networkService.reactToChatMessage(
+                chatRoomId: room.id,
+                messageId: message.id,
+                symbol: symbol,
+                attitude: attitude,
+                token: token,
+                serverUrl: serverUrl
+            )
+        } catch {
+            print("[ChatRoomViewModel] reactToMessage failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Pins a message. Mirrors Flutter's `MessagesNotifier.pinMessage`.
+    func pinMessage(_ message: SnChatMessage) async {
+        guard let token = appState.token, let serverUrl = appState.serverUrl else { return }
+        do {
+            try await appState.networkService.pinChatMessage(
+                chatRoomId: room.id,
+                messageId: message.id,
+                token: token,
+                serverUrl: serverUrl
+            )
+        } catch {
+            print("[ChatRoomViewModel] pinMessage failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Sets the message to reply to (populates the composer).
+    func startReply(_ message: SnChatMessage) {
+        replyingTo = message
+        draft = ""
+    }
+
+    /// Sets the message to forward.
+    func startForward(_ message: SnChatMessage) {
+        forwardingMessage = message
+    }
+
+    /// Clears the reply/forward/edit state.
+    func clearActionState() {
+        replyingTo = nil
+        forwardingMessage = nil
+        editingMessage = nil
+    }
+
     // MARK: - Sending
 
     private var lastTypingSentAt: Date?
@@ -338,7 +443,7 @@ final class ChatRoomViewModel: ObservableObject {
     func send() async {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        await sendContent(text)
+        await sendContent(text, replyToId: replyingTo?.id)
     }
 
     /// Sends a standalone sticker message (`:prefix+slug:` body) — the
@@ -515,7 +620,7 @@ final class ChatRoomViewModel: ObservableObject {
 
     /// Core send: inserts an optimistic pending row, sends `content` over the
     /// socket (HTTP fallback), and replaces the row with the ack.
-    private func sendContent(_ content: String) async {
+    private func sendContent(_ content: String, replyToId: String? = nil) async {
         guard !isSending,
               let token = appState.token, let serverUrl = appState.serverUrl else { return }
         isSending = true
@@ -535,7 +640,7 @@ final class ChatRoomViewModel: ObservableObject {
             editedAt: nil,
             attachments: [],
             reactions: [],
-            repliedMessageId: nil,
+            repliedMessageId: replyToId,
             forwardedMessageId: nil,
             senderId: identity?.id ?? appState.currentAccountId ?? "",
             sender: identity ?? .fallback,
@@ -555,7 +660,8 @@ final class ChatRoomViewModel: ObservableObject {
                 content: content,
                 clientMessageId: clientMessageId,
                 token: token,
-                serverUrl: serverUrl
+                serverUrl: serverUrl,
+                replyToId: replyToId
             )
             // Replace the optimistic row with the server-confirmed message.
             if let index = messages.firstIndex(where: { $0.id == pendingId }) {
@@ -565,6 +671,8 @@ final class ChatRoomViewModel: ObservableObject {
             } else if sent.isDisplayable, !messages.contains(where: { $0.id == sent.id }) {
                 messages.append(sent)
             }
+            // Clear reply state after successful send.
+            if replyToId != nil { replyingTo = nil }
             persist()
         } catch {
             print("[ChatRoomViewModel] send - failed: \(error.localizedDescription)")

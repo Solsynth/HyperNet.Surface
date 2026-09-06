@@ -67,6 +67,11 @@
 "account.signOut" = "Sign Out";
 "account.signOut.accessibility" = "Sign out of this watch";
 
+/* MARK: - AccountQrView */
+"account.qr" = "Account QR";
+"account.qr.title" = "Account QR";
+"account.qr.share" = "Share Account";
+
 /* MARK: - CheckInView */
 "checkin.title" = "Check In";
 "checkin.couldntLoad" = "Couldn't load check-in";
@@ -125,6 +130,18 @@
 "chatRoom.repliedToMessage" = "Replied to a message";
 "chatRoom.forwardedMessage" = "Forwarded message";
 "chatRoom.moreAttachments" = "%d+ more";
+
+/* MARK: - Message Action Menu */
+"chatRoom.reply" = "Reply";
+"chatRoom.forward" = "Forward";
+"chatRoom.edit" = "Edit";
+"chatRoom.delete" = "Delete";
+"chatRoom.react" = "React";
+"chatRoom.pin" = "Pin";
+"chatRoom.copy" = "Copy";
+"chatRoom.resend" = "Resend";
+"chatRoom.deleteConfirm" = "Delete this message?";
+"chatRoom.actions" = "Actions";
 
 /* MARK: - VoiceMessageView */
 "voice.play" = "Play voice message";
@@ -309,3 +326,9 @@
 "fortune.study" = "Study";
 "fortune.work" = "Work";
 "fortune.health" = "Health";
+
+/* MARK: - Search */
+"explore.search" = "Search posts";
+"search.posts" = "Search Posts";
+"search.placeholder" = "Search...";
+"search.hint" = "Type to search posts";

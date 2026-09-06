@@ -67,6 +67,11 @@
 "account.signOut" = "登出";
 "account.signOut.accessibility" = "登出此手錶";
 
+/* MARK: - AccountQrView */
+"account.qr" = "帳戶二維碼";
+"account.qr.title" = "帳戶二維碼";
+"account.qr.share" = "分享帳戶";
+
 /* MARK: - CheckInView */
 "checkin.title" = "簽到";
 "checkin.couldntLoad" = "無法載入簽到";
@@ -125,6 +130,18 @@
 "chatRoom.repliedToMessage" = "回覆了一則訊息";
 "chatRoom.forwardedMessage" = "轉發的訊息";
 "chatRoom.moreAttachments" = "%d+ 更多";
+
+/* MARK: - Message Action Menu */
+"chatRoom.reply" = "回覆";
+"chatRoom.forward" = "轉發";
+"chatRoom.edit" = "編輯";
+"chatRoom.delete" = "刪除";
+"chatRoom.react" = "回應";
+"chatRoom.pin" = "置頂";
+"chatRoom.copy" = "複製";
+"chatRoom.resend" = "重新發送";
+"chatRoom.deleteConfirm" = "刪除此訊息？";
+"chatRoom.actions" = "操作";
 
 /* MARK: - VoiceMessageView */
 "voice.play" = "播放語音訊息";
@@ -309,3 +326,9 @@
 "fortune.study" = "學業";
 "fortune.work" = "事業";
 "fortune.health" = "健康";
+
+/* MARK: - Search */
+"explore.search" = "搜尋貼文";
+"search.posts" = "搜尋貼文";
+"search.placeholder" = "搜尋...";
+"search.hint" = "輸入以搜尋貼文";
