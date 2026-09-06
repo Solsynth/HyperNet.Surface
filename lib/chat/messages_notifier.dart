@@ -589,10 +589,6 @@ class MessagesNotifier extends _$MessagesNotifier {
   String? _stringValue(dynamic value) => value?.toString();
   Map<String, dynamic> _accountProfileDiagnostic(SnAccount account) {
     final profile = account.profile;
-    final hasIdentityFields =
-        profile.firstName.trim().isNotEmpty ||
-        profile.lastName.trim().isNotEmpty ||
-        profile.bio.trim().isNotEmpty;
     return {
       'account_id': account.id,
       'profile_id': profile.id,
@@ -601,9 +597,9 @@ class MessagesNotifier extends _$MessagesNotifier {
       'profile_has_last_name': profile.lastName.trim().isNotEmpty,
       'profile_has_bio': profile.bio.trim().isNotEmpty,
       'profile_has_picture': profile.picture != null,
-      'profile_is_bare':
-          profile.id.trim().isEmpty ||
-          !hasIdentityFields && profile.picture == null,
+      // Only an id-less (server-fabricated) shell is bare; empty content
+      // fields are legitimate for a real account with no profile data.
+      'profile_is_bare': profile.id.trim().isEmpty,
     };
   }
 

@@ -298,16 +298,13 @@ class AppDatabase {
   Future<void> saveMember(SnChatMember member) =>
       _write(() => _memory.saveMember(member));
 
-  /// True when the account carries a server-fabricated profile shell (random
-  /// id, no name/bio/picture) rather than real data. Such shells must never
-  /// be cached or served back.
+  /// True when the account carries a server-fabricated profile shell. The
+  /// server always assigns a real profile UUID id to a DB-backed account; a
+  /// fabricated fallback shell has none. Empty content fields (first/last
+  /// name, bio, picture) are legitimate — a real account may simply carry no
+  /// profile data — so only the missing id marks a shell.
   static bool _isBareProfile(SnAccount account) {
-    final profile = account.profile;
-    return profile.id.trim().isEmpty ||
-        (profile.firstName.trim().isEmpty &&
-            profile.lastName.trim().isEmpty &&
-            profile.bio.trim().isEmpty &&
-            profile.picture == null);
+    return account.profile.id.trim().isEmpty;
   }
 
   Future<void> saveAccount(
