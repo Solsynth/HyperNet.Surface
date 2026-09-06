@@ -252,8 +252,9 @@ class _GroupReadAvatars extends HookWidget {
       [newAccounts.length],
     );
 
-    final width =
-        visible.length * pitch + 4 + (showCounter ? _avatarRadius * 2 : 0);
+    final width = showCounter
+        ? visible.length * pitch + _avatarRadius * 2
+        : visible.length * pitch + _overlap;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 3),
@@ -292,8 +293,8 @@ class _GroupReadAvatars extends HookWidget {
                     ),
                   if (showCounter)
                     _ReadersCounterBadge(
-                      left: visible.length * pitch + 4,
-                      count: readerMembers.length,
+                      left: visible.length * pitch,
+                      count: readerMembers.length - _maxAvatars,
                     ),
                 ],
               ),
