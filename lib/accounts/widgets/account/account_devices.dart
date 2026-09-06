@@ -1489,7 +1489,7 @@ class AccountSessionSheet extends HookConsumerWidget {
   }
 }
 
-class _DevicesTab extends StatelessWidget {
+class _DevicesTab extends StatefulWidget {
   final AsyncValue<PaginatedResult<SnAuthDeviceWithSession>> authDevices;
   final bool wideScreen;
   final Function(String) logoutDevice;
@@ -1509,106 +1509,173 @@ class _DevicesTab extends StatelessWidget {
   });
 
   @override
+  State<_DevicesTab> createState() => _DevicesTabState();
+}
+
+class _DevicesTabState extends State<_DevicesTab> {
+  bool _webExpanded = false;
+
+  Widget _buildDeviceItem(BuildContext context, SnAuthDeviceWithSession device) {
+    if (!widget.wideScreen) {
+      return Dismissible(
+        key: Key('device-${device.id}'),
+        direction: device.isCurrent
+            ? DismissDirection.none
+            : DismissDirection.horizontal,
+        background: Container(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Icon(
+            Icons.edit,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        ),
+        secondaryBackground: Container(
+          color: Theme.of(context).colorScheme.errorContainer,
+          alignment: Alignment.centerRight,
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Icon(
+            Icons.logout,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+          ),
+        ),
+        confirmDismiss: (direction) async {
+          if (direction == DismissDirection.startToEnd) {
+            widget.updateDeviceLabel(device.deviceId);
+            return false;
+          } else {
+            final confirm = await showConfirmAlert(
+              'authDeviceLogoutHint'.tr(),
+              'authDeviceLogout'.tr(),
+              isDanger: true,
+            );
+            if (confirm && context.mounted) {
+              try {
+                showLoadingModal(context);
+                final stargateApi =
+                    widget.ref.read(solarNetworkClientProvider).stargate;
+                await stargateApi.revokeDevice(device.deviceId);
+                widget.ref.invalidate(authDevicesProvider);
+              } catch (err) {
+                showErrorAlert(err);
+              } finally {
+                if (context.mounted) {
+                  hideLoadingModal(context);
+                }
+              }
+            }
+            return confirm;
+          }
+        },
+        child: _DeviceCard(
+          device: device,
+          onTap: () => widget.onDeviceTap(device),
+        ),
+      );
+    }
+    return _DeviceCard(
+      device: device,
+      onTap: () => widget.onDeviceTap(device),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return authDevices.when(
-      data: (data) => ExtendedRefreshIndicator(
-        onRefresh: () => Future.sync(() => ref.invalidate(authDevicesProvider)),
-        child: data.items.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.devices_other,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return widget.authDevices.when(
+      data: (data) {
+        if (data.items.isEmpty) {
+          return ExtendedRefreshIndicator(
+            onRefresh: () =>
+                Future.sync(() => widget.ref.invalidate(authDevicesProvider)),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.devices_other,
+                    size: 64,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  Gap(16),
+                  Text(
+                    'dataEmpty'.tr(),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                     ),
-                    Gap(16),
-                    Text(
-                      'dataEmpty'.tr(),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                padding: EdgeInsets.only(bottom: 16, top: 8),
-                itemCount: data.items.length,
-                itemBuilder: (context, index) {
-                  final device = data.items[index];
-                  if (!wideScreen) {
-                    return Dismissible(
-                      key: Key('device-${device.id}'),
-                      direction: device.isCurrent
-                          ? DismissDirection.none
-                          : DismissDirection.horizontal,
-                      background: Container(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        alignment: Alignment.centerLeft,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Icon(
-                          Icons.edit,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      secondaryBackground: Container(
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        alignment: Alignment.centerRight,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Icon(
-                          Icons.logout,
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                        ),
-                      ),
-                      confirmDismiss: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          updateDeviceLabel(device.deviceId);
-                          return false;
-                        } else {
-                          final confirm = await showConfirmAlert(
-                            'authDeviceLogoutHint'.tr(),
-                            'authDeviceLogout'.tr(),
-                            isDanger: true,
-                          );
-                          if (confirm && context.mounted) {
-                            try {
-                              showLoadingModal(context);
-                              final stargateApi = ref
-                                  .read(solarNetworkClientProvider)
-                                  .stargate;
-                              await stargateApi.revokeDevice(device.deviceId);
-                              ref.invalidate(authDevicesProvider);
-                            } catch (err) {
-                              showErrorAlert(err);
-                            } finally {
-                              if (context.mounted) {
-                                hideLoadingModal(context);
-                              }
-                            }
-                          }
-                          return confirm;
-                        }
-                      },
-                      child: _DeviceCard(
-                        device: device,
-                        onTap: () => onDeviceTap(device),
-                      ),
-                    );
-                  }
-                  return _DeviceCard(
-                    device: device,
-                    onTap: () => onDeviceTap(device),
-                  );
-                },
+                  ),
+                ],
               ),
-      ),
+            ),
+          );
+        }
+
+        final nativeDevices =
+            data.items.where((d) => d.platform != 1).toList();
+        final webDevices =
+            data.items.where((d) => d.platform == 1).toList();
+
+        return ExtendedRefreshIndicator(
+          onRefresh: () =>
+              Future.sync(() => widget.ref.invalidate(authDevicesProvider)),
+          child: ListView(
+            padding: EdgeInsets.only(bottom: 16, top: 8),
+            children: [
+              // Native devices
+              for (final device in nativeDevices)
+                _buildDeviceItem(context, device),
+
+              // Web browsers — collapsible
+              if (webDevices.isNotEmpty) ...[
+                InkWell(
+                  onTap: () => setState(() => _webExpanded = !_webExpanded),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.language,
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        Gap(8),
+                        Expanded(
+                          child: Text(
+                            'authWebBrowsers'.tr(),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                        ),
+                        Text(
+                          '${webDevices.length}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.outline),
+                        ),
+                        Gap(4),
+                        Icon(
+                          _webExpanded
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                          color: colorScheme.onSurfaceVariant,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_webExpanded)
+                  for (final device in webDevices)
+                    _buildDeviceItem(context, device),
+              ],
+            ],
+          ),
+        );
+      },
       error: (err, _) => ResponseErrorWidget(
         error: err,
-        onRetry: () => ref.invalidate(authDevicesProvider),
+        onRetry: () => widget.ref.invalidate(authDevicesProvider),
       ),
       loading: () => ResponseLoadingWidget(),
     );
