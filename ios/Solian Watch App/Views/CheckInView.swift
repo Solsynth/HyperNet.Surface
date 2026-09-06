@@ -163,19 +163,12 @@ private struct CheckInResultCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Level + date
+            // Level + date — the localised rank name; the numeric "Level %d"
+            // prefix is intentionally dropped so the watch reads the rank only.
             VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(String(format: L10n.checkInLevel, result.level))
-                        .font(.headline)
-                        .foregroundColor(levelColor)
-                    // The rank name — checks the same quality/fortune scale the
-                    // main app uses (level 4 = "Best Luck" 大吉, level 0 =
-                    // "Worst Luck" 大凶). English, matching the watch UI.
-                    Text(result.levelName)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.secondary)
-                }
+                Text(L10n.checkInLevelName(result.level))
+                    .font(.headline)
+                    .foregroundColor(levelColor)
                 Text(String(format: L10n.checkInCheckedIn, result.createdAt.formatted(.dateTime.month(.abbreviated).day())))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -183,42 +176,48 @@ private struct CheckInResultCard: View {
 
             Divider()
 
-            // Poem (the signature moment)
-            if let report = result.fortuneReport, !report.poem.isEmpty {
-                Text(report.poem)
-                    .font(.body)
-                    .italic()
-                    .foregroundStyle(.primary)
-                    .lineSpacing(3)
+            if let report = result.fortuneReport {
+                // Poem (the signature moment).
+                if !report.poem.isEmpty {
+                    Text(report.poem)
+                        .font(.body)
+                        .italic()
+                        .foregroundStyle(.primary)
+                        .lineSpacing(3)
 
-                if !report.summary.isEmpty {
-                    Text(report.summary)
+                    if !report.summary.isEmpty {
+                        Text(report.summary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Divider()
+                }
+
+                // Today's fortunes — the glanceable essentials. Cells are
+                // tappable to read the full value in a sheet.
+                FortuneGrid(report: report)
+
+                // Daily fortune saying (advisory).
+                if let fortune = fortune, !fortune.content.isEmpty {
+                    Divider()
+                    Text(fortune.content)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
                 }
-                Divider()
-            }
 
-            // Today's fortunes — the glanceable essentials.
-            if let report = result.fortuneReport {
-                FortuneGrid(report: report)
-            }
-
-            // Daily fortune saying (advisory).
-            if let fortune = fortune, !fortune.content.isEmpty {
-                Divider()
-                Text(fortune.content)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-            }
-
-            // Tips
-            if !result.tips.isEmpty {
-                Divider()
-                ForEach(result.tips) { tip in
-                    TipRow(tip: tip)
+                // Tips
+                if !result.tips.isEmpty {
+                    Divider()
+                    ForEach(result.tips) { tip in
+                        TipRow(tip: tip)
+                    }
                 }
+            } else {
+                // The AI hasn't finished generating the fortune report yet.
+                // Show a pending note rather than mocking a poem/tips (mirrors
+                // the main app's `FallbackMessage`).
+                CheckInReportPendingCard()
             }
         }
         .padding(.vertical, 8)
@@ -237,14 +236,37 @@ private struct CheckInResultCard: View {
     }
 }
 
-/// Compact two-column grid of the day's key fortunes.
+/// Shown when the check-in succeeded but the AI hasn't generated the fortune
+/// report yet. Mirrors the main app's `FallbackMessage`: a quiet note instead
+/// of a fabricated poem/tips breakdown.
+private struct CheckInReportPendingCard: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "hourglass")
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+            Text(L10n.checkInReportPending)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+/// Compact two-column grid of the day's key fortunes. Each cell truncates to
+/// two lines; tapping opens a sheet with the full value.
 private struct FortuneGrid: View {
     let report: SnCheckInFortuneReport
 
-    private struct Item {
+    @State private var selectedItem: Item?
+
+    struct Item: Identifiable {
         let icon: String
         let label: String
         let value: String
+
+        var id: String { label }
     }
 
     private var items: [Item] {
@@ -263,17 +285,60 @@ private struct FortuneGrid: View {
                 spacing: 8
             ) {
                 ForEach(items, id: \.label) { item in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Label(item.label, systemImage: item.icon)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(item.value)
-                            .font(.caption)
-                            .lineLimit(2)
+                    Button {
+                        selectedItem = item
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Label(item.label, systemImage: item.icon)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(item.value)
+                                .font(.caption)
+                                .lineLimit(2)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(8)
+                        .background(Color.gray.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(8)
-                    .background(Color.gray.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .buttonStyle(.plain)
+                }
+            }
+            .sheet(item: $selectedItem) { item in
+                FortuneDetailSheet(item: item)
+            }
+        }
+    }
+}
+
+/// Full-content reader for a fortune item, presented from `FortuneGrid`.
+private struct FortuneDetailSheet: View {
+    let item: FortuneGrid.Item
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label(item.label, systemImage: item.icon)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Text(item.value)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding()
+            }
+            .navigationTitle(item.label)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text(L10n.checkInDone)
+                    }
                 }
             }
         }

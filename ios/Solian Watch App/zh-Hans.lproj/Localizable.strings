@@ -104,8 +104,15 @@
 "checkin.checkInToday" = "今日签到";
 "checkin.description" = "每日签到获取诗句和今日运势。";
 "checkin.checkIn" = "签到";
-"checkin.level" = "等级 %d";
 "checkin.checkedIn" = "签到于 %@";
+"checkin.reportPending" = "神庙已收下今日签到，但签文仍藏在雾中。";
+"checkin.done" = "完成";
+"checkin.levelName.0" = "大凶";
+"checkin.levelName.1" = "凶";
+"checkin.levelName.2" = "中平";
+"checkin.levelName.3" = "吉";
+"checkin.levelName.4" = "大吉";
+"checkin.levelName.5" = "生日快乐 🥳";
 "checkin.love" = "爱情";
 "checkin.study" = "学业";
 "checkin.work" = "事业";

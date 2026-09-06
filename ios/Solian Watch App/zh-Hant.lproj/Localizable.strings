@@ -104,8 +104,15 @@
 "checkin.checkInToday" = "今日簽到";
 "checkin.description" = "每日簽到獲取詩句和今日運勢。";
 "checkin.checkIn" = "簽到";
-"checkin.level" = "等級 %d";
 "checkin.checkedIn" = "簽到於 %@";
+"checkin.reportPending" = "神廟已收下今日簽到，但籤文仍藏在霧中。";
+"checkin.done" = "完成";
+"checkin.levelName.0" = "大兇";
+"checkin.levelName.1" = "兇";
+"checkin.levelName.2" = "中平";
+"checkin.levelName.3" = "吉";
+"checkin.levelName.4" = "大吉";
+"checkin.levelName.5" = "生日快樂 🥳";
 "checkin.love" = "愛情";
 "checkin.study" = "學業";
 "checkin.work" = "事業";

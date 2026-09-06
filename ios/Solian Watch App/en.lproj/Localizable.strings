@@ -104,8 +104,15 @@
 "checkin.checkInToday" = "Check in today";
 "checkin.description" = "Return daily for a poem and today's fortunes.";
 "checkin.checkIn" = "Check In";
-"checkin.level" = "Level %d";
 "checkin.checkedIn" = "Checked in %@";
+"checkin.reportPending" = "The shrine received your check-in, but today's oracle text is still hidden in the mist.";
+"checkin.done" = "Done";
+"checkin.levelName.0" = "Worst Luck";
+"checkin.levelName.1" = "Bad Luck";
+"checkin.levelName.2" = "A Normal Day";
+"checkin.levelName.3" = "Good Luck";
+"checkin.levelName.4" = "Best Luck";
+"checkin.levelName.5" = "Happy Birthday 🥳";
 "checkin.love" = "Love";
 "checkin.study" = "Study";
 "checkin.work" = "Work";

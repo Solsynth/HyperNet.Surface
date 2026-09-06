@@ -38,7 +38,6 @@ struct AgentChatView: View {
                     .hidden()
                 }
         }
-        .task { await viewModel.loadInitial() }
     }
 
     // MARK: - Conversation list
@@ -99,6 +98,7 @@ struct AgentChatView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        .task { await viewModel.loadInitial() }
     }
 
     // MARK: - Agent picker sheet

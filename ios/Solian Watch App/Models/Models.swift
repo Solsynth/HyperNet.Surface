@@ -2133,21 +2133,6 @@ struct SnCheckInResult: Codable {
         accountId = try container.decodeIfPresent(String.self, forKey: .accountId) ?? ""
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
     }
-
-    /// The rank name for this check-in level, matching the main app's
-    /// `checkInResultLevel$level` string (level 4 = "Best Luck" 大吉, level 0
-    /// = "Worst Luck" 大凶). English, consistent with the watch UI.
-    var levelName: String {
-        switch level {
-        case 5: return "Birthday Joy"
-        case 4: return "Best Luck"
-        case 3: return "Good Luck"
-        case 2: return "A Normal Day"
-        case 1: return "Bad Luck"
-        case 0: return "Worst Luck"
-        default: return "Checked In"
-        }
-    }
 }
 
 /// Daily fortune saying (`GET /accounts/fortune/daily`). Mirrors `SnFortuneSaying`.

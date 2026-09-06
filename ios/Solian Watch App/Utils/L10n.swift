@@ -119,8 +119,17 @@ public enum L10n {
     static let checkInCheckInToday = NSLocalizedString("checkin.checkInToday", comment: "Check in today")
     static let checkInDescription = NSLocalizedString("checkin.description", comment: "Check-in description")
     static let checkInCheckIn = NSLocalizedString("checkin.checkIn", comment: "Check in button")
-    static let checkInLevel = NSLocalizedString("checkin.level", comment: "Level label")
     static let checkInCheckedIn = NSLocalizedString("checkin.checkedIn", comment: "Checked in date")
+    static let checkInReportPending = NSLocalizedString("checkin.reportPending", comment: "Fortune report still generating")
+    static let checkInDone = NSLocalizedString("checkin.done", comment: "Done button on full-content sheet")
+
+    /// The localized rank name for a check-in level, matching the main app's
+    /// `checkInResultLevel$level` strings (level 4 = "Best Luck" 大吉, level 0
+    /// = "Worst Luck" 大凶). Reads through `OverrideBundle` so the active
+    /// language override is applied.
+    static func checkInLevelName(_ level: Int) -> String {
+        NSLocalizedString("checkin.levelName.\(level)", comment: "Check-in level name")
+    }
 
     // MARK: - ChatView
     static let chatTitle = NSLocalizedString("chat.title", comment: "Chat title")
