@@ -821,8 +821,14 @@ class _OAuthConnectSheet extends HookConsumerWidget {
 
       Future<void> poll() async {
         try {
-          final s = await ref.read(personalityOAuthStatusProvider.future);
+          // Read the status endpoint directly on every tick so we never serve
+          // a stale cached value from the provider after the user approves.
+          final dio = ref.read(apiClientProvider);
+          final resp = await dio.get('/personality/oauth/status');
           if (cancelled) return;
+          final s = SnPersonalityOAuthStatus.fromJson(
+            resp.data as Map<String, dynamic>,
+          );
           status.value = s;
           if (s.isConnected) {
             if (context.mounted) Navigator.of(context).maybePop();
