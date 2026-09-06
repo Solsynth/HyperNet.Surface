@@ -791,19 +791,36 @@ class _OAuthConnectSheet extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final status = ref.watch(personalityOAuthStatusProvider);
+    final status = useState<SnPersonalityOAuthStatus?>(null);
     final launched = useState(false);
 
-    // Poll on a timer while the sheet stays open so it auto-closes when the
-    // user authorizes in the browser. Also kick a refresh on open.
+    // Poll on a timer, refreshing through a read into local state so we never
+    // invalidate a provider this widget watches while it is building. This
+    // also auto-closes the sheet once the user authorizes in the browser.
     useEffect(() {
-      ref.invalidate(personalityOAuthStatusProvider);
-      final timer = Timer.periodic(
-        const Duration(seconds: 3),
-        (_) => ref.invalidate(personalityOAuthStatusProvider),
-      );
-      return timer.cancel;
+      var cancelled = false;
+      Future<void> poll() async {
+        try {
+          final s = await ref.read(personalityOAuthStatusProvider.future);
+          if (cancelled) return;
+          status.value = s;
+          if (s.isConnected) {
+            if (context.mounted) Navigator.of(context).maybePop();
+          }
+        } catch (_) {
+          // ignore transient poll errors; keep waiting and retry next tick.
+        }
+      }
+
+      poll();
+      final timer = Timer.periodic(const Duration(seconds: 3), (_) => poll());
+      return () {
+        cancelled = true;
+        timer.cancel();
+      };
     }, []);
+
+    final connected = status.value?.isConnected ?? false;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -842,78 +859,24 @@ class _OAuthConnectSheet extends HookConsumerWidget {
               ],
             ),
           ),
-          status.when(
-            data: (s) {
-              if (s.isConnected) {
-                // Auto-close once the flow completes.
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (context.mounted) Navigator.of(context).maybePop();
-                });
-                return Row(
-                  children: [
-                    Icon(
-                      Symbols.check_circle,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const Gap(8),
-                    Expanded(
-                      child: Text(
-                        'aiConsoleOAuthConnected'.tr(),
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const Gap(8),
-                  Expanded(
-                    child: Text(
-                      'aiConsoleOAuthWaiting'.tr(),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ),
-                ],
-              );
-            },
-            error: (e, _) => Row(
-              children: [
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+          Row(
+            children: [
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const Gap(8),
+              Expanded(
+                child: Text(
+                  (connected
+                          ? 'aiConsoleOAuthConnected'
+                          : 'aiConsoleOAuthWaiting')
+                      .tr(),
+                  style: theme.textTheme.bodySmall,
                 ),
-                const Gap(8),
-                Expanded(
-                  child: Text(
-                    'aiConsoleOAuthWaiting'.tr(),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ),
-              ],
-            ),
-            loading: () => Row(
-              children: [
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                const Gap(8),
-                Expanded(
-                  child: Text(
-                    'aiConsoleOAuthWaiting'.tr(),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
           const Gap(4),
           Row(
