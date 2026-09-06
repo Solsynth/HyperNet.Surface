@@ -2334,6 +2334,7 @@
   "multiplier": "Multiplier",
   "multiplierLabel": "Multiplier",
   "muteExpiresIn": "Expires {}",
+  "mutePermanent": "Permanent",
   "muteUser": "Mute User",
   "updateMuteDuration": "Update Mute Duration",
   "my": "My",

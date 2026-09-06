@@ -2319,6 +2319,7 @@
   "multiplier": "倍率",
   "multiplierLabel": "倍率",
   "muteExpiresIn": "到期时间 {}",
+  "mutePermanent": "永久",
   "muteUser": "静音用户",
   "updateMuteDuration": "更新静音时长",
   "my": "我的",
