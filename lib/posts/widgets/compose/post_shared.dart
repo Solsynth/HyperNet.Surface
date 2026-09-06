@@ -261,91 +261,115 @@ Widget _buildBlogPreviewCard(
       ? post.description!
       : preview?.description;
   final faviconUrl = preview?.faviconUrl;
+  final theme = Theme.of(context);
 
-  return Container(
+  return Padding(
     padding: padding,
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      border: Border.all(
-        color: Theme.of(context).dividerColor.withOpacity(0.5),
+    child: Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
       ),
-      borderRadius: const BorderRadius.all(Radius.circular(8)),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (hasPreviewImage)
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-            child: SizedBox(
-              height: 180,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Accent strip
+          Container(
+            height: 3,
+            color: theme.colorScheme.tertiary.withOpacity(0.6),
+          ),
+          if (hasPreviewImage)
+            SizedBox(
+              height: 160,
               child: UniversalImage(
                 uri: imageUrl,
                 fit: BoxFit.cover,
                 useFallbackImage: false,
               ),
             ),
-          ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Badge(
-                  label: const Text('postBlog').tr(),
-                  backgroundColor: Theme.of(context).colorScheme.tertiary,
-                  textColor: Theme.of(context).colorScheme.onTertiary,
-                ),
-                const Spacer(),
-                Icon(
-                  Symbols.open_in_new,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-            const Gap(4),
-            if (title?.isNotEmpty ?? false)
-              Text(
-                title!,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
-              ),
-            if (description?.isNotEmpty ?? false)
-              Text(description!, style: Theme.of(context).textTheme.bodyMedium),
-            if (host.isNotEmpty)
-              Row(
-                children: [
-                  if (faviconUrl?.isNotEmpty ?? false) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(2),
-                      child: UniversalImage(
-                        uri: faviconUrl!,
-                        width: 14,
-                        height: 14,
-                        fit: BoxFit.cover,
-                        useFallbackImage: false,
+                Row(
+                  children: [
+                    Text(
+                      'postBlog'.tr().toUpperCase(),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        letterSpacing: 0.8,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const Gap(6),
+                    const Spacer(),
+                    Icon(
+                      Symbols.open_in_new,
+                      size: 14,
+                      color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                    ),
                   ],
-                  Expanded(
-                    child: Text(
-                      host,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                ),
+                if (title?.isNotEmpty ?? false) ...[
+                  const Gap(8),
+                  Text(
+                    title!,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
                     ),
                   ),
                 ],
-              ),
-          ],
-        ).padding(horizontal: 16, vertical: 12),
-      ],
+                if (description?.isNotEmpty ?? false) ...[
+                  const Gap(4),
+                  Text(
+                    description!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (host.isNotEmpty) ...[
+                  const Gap(8),
+                  Row(
+                    children: [
+                      if (faviconUrl?.isNotEmpty ?? false) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: UniversalImage(
+                            uri: faviconUrl!,
+                            width: 12,
+                            height: 12,
+                            fit: BoxFit.cover,
+                            useFallbackImage: false,
+                          ),
+                        ),
+                        const Gap(6),
+                      ],
+                      Expanded(
+                        child: Text(
+                          host,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withOpacity(0.7),
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -2192,19 +2216,31 @@ class PostBody extends ConsumerWidget {
                       if (item.title?.isNotEmpty ?? false)
                         Text(
                           item.title!,
-                          style: Theme.of(context).textTheme.titleMedium!
-                              .copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                            fontWeight: item.type == 2 && isFullPost
+                                ? FontWeight.w600
+                                : FontWeight.bold,
+                            height: 1.3,
+                          ),
                         ),
                       if (item.description?.isNotEmpty ?? false)
                         Text(
                           item.description!,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: item.type == 2 && isFullPost
+                                ? Theme.of(context).colorScheme.onSurfaceVariant
+                                : null,
+                          ),
                         ),
                     ],
-                  ).padding(bottom: 4),
+                  ).padding(
+                    bottom: item.type == 2 && isFullPost ? 12 : 4,
+                  ),
                 MarkdownTextContent(
                   linesMargin: item.type == 1 && !useCompactArticlePreview
                       ? const EdgeInsets.symmetric(vertical: 8)
+                      : item.type == 2 && isFullPost
+                      ? const EdgeInsets.symmetric(vertical: 6)
                       : const EdgeInsets.symmetric(vertical: 4),
                   textStyle: baseTextStyle,
                   content: previewContent,

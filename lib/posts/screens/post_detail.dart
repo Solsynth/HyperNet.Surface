@@ -2597,52 +2597,85 @@ class _BlogPostSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final url = _getBlogUrl(post);
+    final hasTitle = post.title?.isNotEmpty ?? false;
+    final hasDescription = post.description?.isNotEmpty ?? false;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.12)),
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Badge(
-                label: const Text('postBlog').tr(),
-                backgroundColor: theme.colorScheme.tertiary,
-                textColor: theme.colorScheme.onTertiary,
-              ),
-              const Spacer(),
-              if (url != null)
-                Tooltip(
-                  message: 'openBlog'.tr(),
-                  child: InkWell(
-                    onTap: () {
-                      launchUrl(
-                        Uri.parse(url),
-                        mode: LaunchMode.externalApplication,
-                      );
-                    },
-                    child: const Icon(Symbols.open_in_new, size: 16),
-                  ),
-                ),
-            ],
+          // Accent strip
+          Container(
+            height: 3,
+            color: theme.colorScheme.tertiary.withOpacity(0.6),
           ),
-          const Gap(4),
-          if (post.title?.isNotEmpty ?? false)
-            Text(
-              post.title!,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'postBlog'.tr().toUpperCase(),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        letterSpacing: 0.8,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (url != null)
+                      Tooltip(
+                        message: 'openBlog'.tr(),
+                        child: InkWell(
+                          onTap: () {
+                            launchUrl(
+                              Uri.parse(url),
+                              mode: LaunchMode.externalApplication,
+                            );
+                          },
+                          child: Icon(
+                            Symbols.open_in_new,
+                            size: 15,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if (hasTitle || hasDescription) ...[
+                  const Gap(10),
+                  if (hasTitle)
+                    Text(
+                      post.title!,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                      ),
+                    ),
+                  if (hasDescription) ...[
+                    if (hasTitle) const Gap(4),
+                    Text(
+                      post.description!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ],
             ),
-          if (post.description?.isNotEmpty ?? false) ...[
-            Text(post.description!, style: theme.textTheme.bodyMedium),
-          ],
+          ),
         ],
       ),
     );
