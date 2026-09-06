@@ -10,8 +10,8 @@ import 'package:gap/gap.dart';
 import 'package:island_ui_foundation/island_ui_foundation.dart';
 import 'package:island/core/network.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import 'package:island/auth/models/authorize_client_info.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/response.dart';
@@ -314,7 +314,7 @@ class SnPersonalityOAuthDeviceFlow {
       );
 }
 
-/// Abilities that act on the user's own Solar account (require OAuth).
+/// Abilities that act on the user's own Solarpass (require OAuth).
 const kUserScopedAbilities = <String>{
   'files',
   'wallet',
@@ -782,8 +782,10 @@ class _AccountOAuthBlock extends HookConsumerWidget {
   }
 }
 
-/// Shows the user_code + verification page for the account OIDC device flow.
-/// Polls the status endpoint until the user authorizes, then closes.
+/// Approves the Personality OAuth device flow as the logged-in user, using the
+/// same direct Stargate API the app's QR/device flow uses — no browser needed.
+/// On approve, keeps polling Personality's OAuth status until it flips to
+/// connected, then closes.
 class _OAuthConnectSheet extends HookConsumerWidget {
   final SnPersonalityOAuthDeviceFlow flow;
   const _OAuthConnectSheet({required this.flow});
@@ -792,13 +794,31 @@ class _OAuthConnectSheet extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final status = useState<SnPersonalityOAuthStatus?>(null);
-    final launched = useState(false);
+    final clientInfo = useState<AuthorizeClientInfo?>(null);
+    final infoError = useState<Object?>(null);
+    final resolved = useState<String?>(null);
+    final busy = useState(false);
 
-    // Poll on a timer, refreshing through a read into local state so we never
-    // invalidate a provider this widget watches while it is building. This
-    // also auto-closes the sheet once the user authorizes in the browser.
+    // Fetch the pending device-code info once on open, and poll Personality's
+    // OAuth status so the sheet auto-closes when the backend flow completes.
     useEffect(() {
       var cancelled = false;
+      Future<void> loadInfo() async {
+        try {
+          final client = ref.read(solarNetworkClientProvider);
+          final resp = await client.dio.get(
+            '/stargate/auth/open/device/code/${Uri.encodeComponent(flow.userCode)}',
+          );
+          if (cancelled) return;
+          final data = Map<String, dynamic>.from(resp.data as Map);
+          clientInfo.value = AuthorizeClientInfo.fromJson(data);
+          infoError.value = null;
+        } catch (e) {
+          if (cancelled) return;
+          infoError.value = e;
+        }
+      }
+
       Future<void> poll() async {
         try {
           final s = await ref.read(personalityOAuthStatusProvider.future);
@@ -812,6 +832,7 @@ class _OAuthConnectSheet extends HookConsumerWidget {
         }
       }
 
+      loadInfo();
       poll();
       final timer = Timer.periodic(const Duration(seconds: 3), (_) => poll());
       return () {
@@ -820,91 +841,127 @@ class _OAuthConnectSheet extends HookConsumerWidget {
       };
     }, []);
 
+    Future<void> resolve(bool approve) async {
+      busy.value = true;
+      try {
+        final client = ref.read(solarNetworkClientProvider);
+        await client.dio.post(
+          '/stargate/auth/open/device/code/${Uri.encodeComponent(flow.userCode)}/${approve ? 'approve' : 'decline'}',
+        );
+        resolved.value = approve ? 'approved' : 'declined';
+        if (context.mounted) {
+          showSnackBar(
+            (approve
+                    ? 'aiConsoleOAuthApproved'
+                    : 'aiConsoleOAuthDeclined')
+                .tr(),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) showErrorAlert(e);
+      } finally {
+        busy.value = false;
+      }
+    }
+
     final connected = status.value?.isConnected ?? false;
+    final done = connected ||
+        resolved.value == 'approved' ||
+        resolved.value == 'declined';
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 12,
         children: [
           Text(
             'aiConsoleOAuthConnectBody'.tr(),
             style: theme.textTheme.bodyMedium,
           ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 4,
-              children: [
-                Text(
-                  'aiConsoleOAuthUserCode'.tr(),
-                  style: theme.textTheme.labelSmall,
-                ),
-                SelectableText(
+          Row(
+            children: [
+              Icon(Symbols.link, size: 20, color: theme.colorScheme.primary),
+              const Gap(10),
+              Expanded(
+                child: Text(
                   flow.userCode,
-                  style: theme.textTheme.headlineSmall?.copyWith(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     fontFamily: 'monospace',
                     fontWeight: FontWeight.w600,
                     letterSpacing: 2,
                   ),
                 ),
+              ),
+            ],
+          ),
+          if (infoError.value == null && clientInfo.value != null) ...[
+            Text(
+              clientInfo.value!.clientName,
+              style: theme.textTheme.titleSmall,
+            ),
+            if (clientInfo.value!.scopes.isNotEmpty)
+              Text(
+                (clientInfo.value!.scopes.join(', ')),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ] else if (infoError.value != null)
+            Text(
+              'aiConsoleOAuthInfoError'.tr(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          const Gap(4),
+          if (!done)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: busy.value ? null : () => resolve(false),
+                    icon: const Icon(Symbols.close),
+                    label: Text('decline'.tr()),
+                  ),
+                ),
+                const Gap(12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: busy.value ? null : () => resolve(true),
+                    icon: busy.value
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Symbols.check),
+                    label: Text('approve'.tr()),
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const Gap(8),
+                Expanded(
+                  child: Text(
+                    (connected
+                            ? 'aiConsoleOAuthConnected'
+                            : 'aiConsoleOAuthWaiting')
+                        .tr(),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
               ],
             ),
-          ),
-          Row(
-            children: [
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const Gap(8),
-              Expanded(
-                child: Text(
-                  (connected
-                          ? 'aiConsoleOAuthConnected'
-                          : 'aiConsoleOAuthWaiting')
-                      .tr(),
-                  style: theme.textTheme.bodySmall,
-                ),
-              ),
-            ],
-          ),
-          const Gap(4),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: launched.value
-                      ? null
-                      : () {
-                          launched.value = true;
-                          launchUrl(
-                            Uri.parse(flow.verificationUriComplete),
-                            mode: LaunchMode.externalApplication,
-                          );
-                        },
-                  icon: const Icon(Symbols.open_in_new),
-                  label: Text('aiConsoleOAuthOpenPage'.tr()),
-                ),
-              ),
-              const Gap(8),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  child: Text('close'.tr()),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
