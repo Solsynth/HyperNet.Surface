@@ -27,7 +27,7 @@ class AddCustomWidgetSheet extends HookConsumerWidget {
       heightFactor: 0.85,
       child: authorizedAppsAsync.when(
         data: (apps) {
-          final appsWithSlug = apps
+          final appsWithSlug = apps.items
               .where((a) => a.appSlug != null && a.appSlug!.isNotEmpty)
               .toList();
           if (appsWithSlug.isEmpty) {
