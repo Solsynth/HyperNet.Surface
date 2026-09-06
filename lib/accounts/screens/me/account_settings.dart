@@ -284,32 +284,23 @@ class AccountSettingsScreen extends HookConsumerWidget {
           if (!context.mounted) return;
           final selected = await showModalBottomSheet<String>(
             context: context,
-            builder: (context) {
-              final theme = Theme.of(context);
-              final scheme = theme.colorScheme;
-              return SafeArea(
+            isScrollControlled: true,
+            builder: (context) => SheetScaffold(
+              titleText: 'securityMode'.tr(),
+              heightFactor: 0.45,
+              child: SafeArea(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                      child: Text(
-                        'securityMode'.tr(),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
                       child: Text(
                         'securityModeDescription'.tr(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
-                    const Gap(8),
                     _SecurityModeOption(
                       value: 'default',
                       label: 'securityModeDefault'.tr(),
@@ -328,11 +319,10 @@ class AccountSettingsScreen extends HookConsumerWidget {
                       description: 'securityModeLockoffDescription'.tr(),
                       isSelected: currentMode == 'lockoff',
                     ),
-                    const Gap(16),
                   ],
                 ),
-              );
-            },
+              ),
+            ),
           );
           if (selected == null || selected == currentMode || !context.mounted) return;
           try {
