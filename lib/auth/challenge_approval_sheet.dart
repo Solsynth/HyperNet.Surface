@@ -400,14 +400,14 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                               child: Row(
                                 children: [
                                   Icon(
-                                    Symbols.shield_person,
+                                    Symbols.verified,
                                     size: 16,
                                     color: scheme.onSurfaceVariant,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'challengeApprovalHint'.tr(),
+                                      'challengeTrustedHint'.tr(),
                                       style: theme.textTheme.bodySmall
                                           ?.copyWith(
                                             color: scheme.onSurfaceVariant,
