@@ -83,8 +83,12 @@ final class AgentChatViewModel: ObservableObject {
         do {
             let convos = try await appState.networkService.fetchAgentConversations(token: token, serverUrl: serverUrl)
             self.conversations = convos
+        } catch is CancellationError {
+            return
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            return
         } catch {
-            // Silent fallback; conversations list is non-critical
+            errorMessage = error.localizedDescription
         }
     }
 

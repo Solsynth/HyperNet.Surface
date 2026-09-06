@@ -51,7 +51,7 @@ struct AgentChatView: View {
                 Label(L10n.agentNewChat, systemImage: "plus.circle")
             }
 
-            if viewModel.isLoadingConversations {
+            if viewModel.isLoading || viewModel.isLoadingConversations {
                 HStack {
                     Spacer()
                     ProgressView()

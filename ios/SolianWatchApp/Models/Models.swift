@@ -2190,6 +2190,14 @@ struct SnAgent: Codable, Identifiable {
         case id, name, description
         case isPet = "is_pet"
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id) ?? ""
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        isPet = try container.decodeIfPresent(Bool.self, forKey: .isPet)
+    }
 }
 
 /// A persisted conversation thread on Personality Core.
@@ -2205,6 +2213,14 @@ struct SnAgentConversation: Codable, Identifiable {
         case id, title
         case agentId = "agent_id"
         case lastMessageAt = "last_message_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id) ?? ""
+        agentId = try container.decodeIfPresent(String.self, forKey: .agentId) ?? ""
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? "New conversation"
+        lastMessageAt = try container.decodeIfPresent(Date.self, forKey: .lastMessageAt)
     }
 }
 

@@ -411,6 +411,17 @@ class NetworkService {
         // raw key strings, breaking fields like `replies_count` / `views`.
         return try decoder.decode(type, from: data)
     }
+    private func validateJSONResponse(_ response: URLResponse, data: Data, endpoint: String) throws {
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        guard (200...299).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            print("[NetworkService] \(endpoint) failed with status \(http.statusCode), body: \(body)")
+            throw URLError(URLError.Code(rawValue: http.statusCode))
+        }
+    }
+
     
     /// POST /sphere/posts — create a post, a reply, or a forward (quote).
     ///
@@ -885,99 +896,68 @@ class NetworkService {
         request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await session.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            print("[NetworkService] fetchChatSummary failed with status \(httpResponse.statusCode), body: \(body)")
-            throw URLError(URLError.Code(rawValue: httpResponse.statusCode))
-        }
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode([String: SnChatSummary].self, from: data)
+        try validateJSONResponse(response, data: data, endpoint: "fetchChatSummary")
+        return try Self.decodeJSON([String: SnChatSummary].self, from: data)
     }
 
     func fetchChatRooms(token: String, serverUrl: String, offset: Int = 0, take: Int = 100) async throws -> ChatRoomsResponse {
-        print("[NetworkService] fetchChatRooms - token: \(token.prefix(10))..., serverUrl: \(serverUrl)")
-
         guard let baseURL = URL(string: serverUrl) else {
-            print("[NetworkService] fetchChatRooms - bad URL: \(serverUrl)")
             throw URLError(.badURL)
         }
 
-        // Bare `/messager/chat` returns `{ "rooms": [...] }` — this is the
-        // shape the iOS Runner decodes (ChatRoomsResponse.rooms). The
-        // `/messager/chat/rooms` route is a 404 (SDK-only, unimplemented here).
-        guard var components = URLComponents(
-            url: baseURL.appendingPathComponent("/messager/chat"),
-            resolvingAgainstBaseURL: false
-        ) else {
-            throw URLError(.badURL)
-        }
-        // Offset/take are optional hints; the bare endpoint returns the full
-        // list, and we bound by `take` client-side.
-        components.queryItems = [
-            URLQueryItem(name: "offset", value: String(offset)),
-            URLQueryItem(name: "take", value: String(take)),
-        ]
-
-        var request = URLRequest(url: components.url!)
-        request.httpMethod = "GET"
+        let url = baseURL.appendingPathComponent("/messager/chat/rooms/sync")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            // The watch has no persistent sync cursor yet. Zero requests the
+            // complete joined-room state.
+            "last_sync_timestamp": 0,
+        ])
 
         let (data, response) = try await session.data(for: request)
+        try validateJSONResponse(response, data: data, endpoint: "fetchChatRooms")
 
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            print("[NetworkService] fetchChatRooms failed with status \(httpResponse.statusCode), body: \(body)")
-            throw URLError(URLError.Code(rawValue: httpResponse.statusCode))
+        guard let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw DecodingError.dataCorrupted(.init(
+                codingPath: [],
+                debugDescription: "Chat room sync response is not an object"
+            ))
         }
-
-        let totalCount = Int((response as? HTTPURLResponse)?
-            .value(forHTTPHeaderField: "X-Total") ?? "0") ?? 0
-
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
+        var rooms: [SnChatRoom] = []
 
-        do {
-            // Server wraps the list in `{ "rooms": [...] }`. Tolerate a bare
-            // array too, in case a deployment returns the list unwrapped.
-            let rooms = try decodeRoomList(from: data, decoder: decoder)
-            print("[NetworkService] fetchChatRooms - decode success, rooms count: \(rooms.count), total: \(totalCount)")
-            return ChatRoomsResponse(rooms: rooms, totalCount: totalCount)
-        } catch let decodingError as DecodingError {
-            print("[NetworkService] fetchChatRooms - decode error: \(decodingError)")
-            switch decodingError {
-            case .keyNotFound(let key, let context):
-                print("  Key '\(key.stringValue)' not found. Debug: \(context.debugDescription)")
-            case .typeMismatch(let type, let context):
-                print("  Type mismatch: \(type). Debug: \(context.debugDescription)")
-            case .valueNotFound(let type, let context):
-                print("  Value not found: \(type). Debug: \(context.debugDescription)")
-            case .dataCorrupted(let context):
-                print("  Data corrupted: \(context.debugDescription)")
-            @unknown default:
-                print("  Unknown decoding error")
+        // The sync API returns `{ changes: [{ room: {...} }], ... }`.
+        // Accept a direct `rooms` array too for mixed-version deployments.
+        if let rawRooms = payload["rooms"] as? [Any] {
+            rooms = decodeRooms(rawRooms, decoder: decoder)
+        } else if let rawChanges = payload["changes"] as? [Any] {
+            let rawRooms = rawChanges.compactMap { change -> Any? in
+                guard let change = change as? [String: Any],
+                      String(describing: change["type"] ?? "") != "removed" else { return nil }
+                return change["room"]
             }
-            throw decodingError
-        } catch {
-            print("[NetworkService] fetchChatRooms - other error: \(error)")
-            throw error
+            rooms = decodeRooms(rawRooms, decoder: decoder)
         }
+
+        print("[NetworkService] fetchChatRooms - sync success, rooms count: \(rooms.count)")
+        return ChatRoomsResponse(rooms: rooms, totalCount: rooms.count)
     }
 
-    /// Decodes a room list from a `{ "rooms": [...] }` wrapper (or a bare
-    /// array), mirroring the iOS Runner's `ChatRoomsResponse`.
-    private func decodeRoomList(from data: Data, decoder: JSONDecoder) throws -> [SnChatRoom] {
-        if let rooms = try? decoder.decode([SnChatRoom].self, from: data) {
-            return rooms
+    private func decodeRooms(_ rawRooms: [Any], decoder: JSONDecoder) -> [SnChatRoom] {
+        rawRooms.compactMap { rawRoom in
+            guard let dictionary = rawRoom as? [String: Any],
+                  let data = try? JSONSerialization.data(withJSONObject: dictionary),
+                  let room = try? decoder.decode(SnChatRoom.self, from: data) else {
+                print("[NetworkService] fetchChatRooms - skipped an undecodable room change")
+                return nil
+            }
+            return room
         }
-        struct WrappedRooms: Decodable {
-            let rooms: [SnChatRoom]
-        }
-        let wrapped = try decoder.decode(WrappedRooms.self, from: data)
-        return wrapped.rooms
     }
     
     func fetchChatRoom(identifier: String, token: String, serverUrl: String) async throws -> SnChatRoom {
@@ -1946,17 +1926,14 @@ class NetworkService {
     /// GET /personality/agents — list available agents.
     func fetchAgentList(token: String, serverUrl: String) async throws -> [SnAgent] {
         guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
-        var components = URLComponents(
-            url: baseURL.appendingPathComponent("/personality/agents"),
-            resolvingAgainstBaseURL: false
-        )!
-        components.queryItems = [URLQueryItem(name: "pet", value: "true")]
-        var request = URLRequest(url: components.url!)
+        let url = baseURL.appendingPathComponent("/personality/agents")
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
-        let (data, _) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
+        try validateJSONResponse(response, data: data, endpoint: "fetchAgentList")
         return try Self.decodeJSON([SnAgent].self, from: data)
     }
 
@@ -1968,15 +1945,16 @@ class NetworkService {
             resolvingAgainstBaseURL: false
         )!
         components.queryItems = [
-            URLQueryItem(name: "take", value: "\(take)"),
             URLQueryItem(name: "offset", value: "\(offset)"),
+            URLQueryItem(name: "take", value: "\(take)"),
         ]
         var request = URLRequest(url: components.url!)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
-        let (data, _) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
+        try validateJSONResponse(response, data: data, endpoint: "fetchAgentConversations")
         return try Self.decodeJSON([SnAgentConversation].self, from: data)
     }
 
