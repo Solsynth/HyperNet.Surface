@@ -564,6 +564,8 @@
   "attitudeNeutral": "中立",
   "attitudePositive": "正面",
   "authCurrentSession": "當前會話",
+  "authTrusted": "受信任",
+  "authWebBrowsers": "Web 瀏覽器",
   "authDeviceChallenges": "裝置活動",
   "authDeviceCurrent": "當前裝置",
   "authDeviceEditLabel": "編輯標籤",

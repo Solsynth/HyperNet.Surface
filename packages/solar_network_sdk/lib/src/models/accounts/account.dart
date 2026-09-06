@@ -349,6 +349,8 @@ sealed class SnAuthDevice with _$SnAuthDevice {
     required String accountId,
     required int platform,
     @Default(false) bool isCurrent,
+    @Default('device') String category,
+    @Default(false) bool trusted,
   }) = _SnAuthDevice;
 
   factory SnAuthDevice.fromJson(Map<String, dynamic> json) =>
@@ -366,6 +368,8 @@ sealed class SnAuthDeviceWithSession with _$SnAuthDeviceWithSession {
     required int platform,
     required List<SnAuthSession> sessions,
     @Default(false) bool isCurrent,
+    @Default('device') String category,
+    @Default(false) bool trusted,
   }) = _SnAuthDeviceWithSessione;
 
   factory SnAuthDeviceWithSession.fromJson(Map<String, dynamic> json) =>

@@ -23,6 +23,8 @@ sealed class SnAuthSession with _$SnAuthSession {
     DateTime? deletedAt,
     @Default(false) bool isCurrent,
     int? childrenCount,
+    @Default('device') String category,
+    @Default(false) bool trusted,
   }) = _SnAuthSession;
 
   factory SnAuthSession.fromJson(Map<String, dynamic> json) =>

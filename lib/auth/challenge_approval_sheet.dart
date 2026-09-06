@@ -8,6 +8,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/network/api_error.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/wallets/pin_status.dart';
@@ -589,12 +590,22 @@ Future<void> _handleAuthError(
     // Biometric path error — handled by caller.
     return;
   }
-  // Invalid PIN / missing credentials surface as 401/403.
-  if (err is DioException &&
-      (err.response?.statusCode == 403 || err.response?.statusCode == 401)) {
-    clearStoredPin();
-    showSnackBar('invalidPin'.tr());
-    return;
+  if (err is DioException) {
+    final statusCode = err.response?.statusCode;
+    // AUTH_SESSION_NOT_TRUSTED: only trusted sessions can approve/decline.
+    if (statusCode == 403) {
+      final apiError = ApiError.tryParse(err);
+      if (apiError?.code == 'AUTH_SESSION_NOT_TRUSTED') {
+        showSnackBar('challengeNotTrustedMessage'.tr());
+        return;
+      }
+    }
+    // Invalid PIN / missing credentials surface as 401/403.
+    if (statusCode == 403 || statusCode == 401) {
+      clearStoredPin();
+      showSnackBar('invalidPin'.tr());
+      return;
+    }
   }
   showErrorAlert(err);
 }

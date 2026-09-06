@@ -607,6 +607,8 @@
   "attitudeNeutral": "中立",
   "attitudePositive": "正面",
   "authCurrentSession": "当前会话",
+  "authTrusted": "受信任",
+  "authWebBrowsers": "Web 浏览器",
   "authDeviceChallenges": "设备活动",
   "authDeviceCurrent": "当前设备",
   "authDeviceEditLabel": "编辑标签",

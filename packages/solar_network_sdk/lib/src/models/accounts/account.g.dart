@@ -468,6 +468,8 @@ _SnAuthDevice _$SnAuthDeviceFromJson(Map<String, dynamic> json) =>
       accountId: json['account_id'] as String,
       platform: (json['platform'] as num).toInt(),
       isCurrent: json['is_current'] as bool? ?? false,
+      category: json['category'] as String? ?? 'device',
+      trusted: json['trusted'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$SnAuthDeviceToJson(_SnAuthDevice instance) =>
@@ -479,6 +481,8 @@ Map<String, dynamic> _$SnAuthDeviceToJson(_SnAuthDevice instance) =>
       'account_id': instance.accountId,
       'platform': instance.platform,
       'is_current': instance.isCurrent,
+      'category': instance.category,
+      'trusted': instance.trusted,
     };
 
 _SnAuthDeviceWithSessione _$SnAuthDeviceWithSessioneFromJson(
@@ -494,6 +498,8 @@ _SnAuthDeviceWithSessione _$SnAuthDeviceWithSessioneFromJson(
       .map((e) => SnAuthSession.fromJson(e as Map<String, dynamic>))
       .toList(),
   isCurrent: json['is_current'] as bool? ?? false,
+  category: json['category'] as String? ?? 'device',
+  trusted: json['trusted'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$SnAuthDeviceWithSessioneToJson(
@@ -507,6 +513,8 @@ Map<String, dynamic> _$SnAuthDeviceWithSessioneToJson(
   'platform': instance.platform,
   'sessions': instance.sessions.map((e) => e.toJson()).toList(),
   'is_current': instance.isCurrent,
+  'category': instance.category,
+  'trusted': instance.trusted,
 };
 
 _SnExperienceRecord _$SnExperienceRecordFromJson(Map<String, dynamic> json) =>

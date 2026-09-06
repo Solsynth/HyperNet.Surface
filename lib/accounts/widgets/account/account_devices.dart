@@ -160,6 +160,37 @@ class _DeviceCard extends StatelessWidget {
                                 ),
                               ),
                             ],
+                            if (device.trusted) ...[
+                              Gap(8),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.tertiaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.verified,
+                                      size: 12,
+                                      color: colorScheme.onTertiaryContainer,
+                                    ),
+                                    Gap(4),
+                                    Text(
+                                      'authTrusted'.tr(),
+                                      style: TextStyle(
+                                        color: colorScheme.onTertiaryContainer,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             if (device.sessions.isNotEmpty) ...[
                               Gap(8),
                               Container(
@@ -921,6 +952,37 @@ class _SessionListItem extends StatelessWidget {
                               ),
                             ),
                           ],
+                          if (session.trusted) ...[
+                            Gap(8),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.tertiaryContainer,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.verified,
+                                    size: 12,
+                                    color: colorScheme.onTertiaryContainer,
+                                  ),
+                                  Gap(4),
+                                  Text(
+                                    'authTrusted'.tr(),
+                                    style: TextStyle(
+                                      color: colorScheme.onTertiaryContainer,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           if ((session.childrenCount ?? 0) > 0) ...[
                             Gap(8),
                             Container(
@@ -1112,6 +1174,37 @@ class _SessionTreeTile extends HookConsumerWidget {
                                       color: colorScheme.onPrimary,
                                       fontSize: 12,
                                     ),
+                                  ),
+                                ),
+                              ],
+                              if (session.trusted) ...[
+                                Gap(8),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.tertiaryContainer,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.verified,
+                                        size: 12,
+                                        color: colorScheme.onTertiaryContainer,
+                                      ),
+                                      Gap(4),
+                                      Text(
+                                        'authTrusted'.tr(),
+                                        style: TextStyle(
+                                          color: colorScheme.onTertiaryContainer,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -1624,18 +1717,7 @@ class _SessionsTab extends StatelessWidget {
                         ],
                       ),
                     )
-                  : ListView.builder(
-                      padding: EdgeInsets.only(bottom: 16),
-                      itemCount: data.items.length,
-                      itemBuilder: (context, index) {
-                        final session = data.items[index];
-                        // Use tree tile for sessions with potential children
-                        return _SessionTreeTile(
-                          session: session,
-                          logoutSession: logoutSession,
-                        );
-                      },
-                    ),
+                  : _buildGroupedSessionList(context, data.items),
             ),
           ),
         ],
@@ -1645,6 +1727,59 @@ class _SessionsTab extends StatelessWidget {
         onRetry: () => ref.invalidate(authSessionsProvider),
       ),
       loading: () => ResponseLoadingWidget(),
+    );
+  }
+
+  Widget _buildGroupedSessionList(
+    BuildContext context,
+    List<SnAuthSession> sessions,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final browserSessions =
+        sessions.where((s) => s.category == 'browser').toList();
+    final deviceSessions =
+        sessions.where((s) => s.category != 'browser').toList();
+
+    return ListView(
+      padding: EdgeInsets.only(bottom: 16),
+      children: [
+        // Device sessions
+        ...deviceSessions.map(
+          (session) => _SessionTreeTile(
+            session: session,
+            logoutSession: logoutSession,
+          ),
+        ),
+        // Browser sessions with header
+        if (browserSessions.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.web,
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                Gap(8),
+                Text(
+                  'authWebBrowsers'.tr(),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...browserSessions.map(
+            (session) => _SessionTreeTile(
+              session: session,
+              logoutSession: logoutSession,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

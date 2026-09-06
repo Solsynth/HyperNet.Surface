@@ -1238,6 +1238,11 @@ class _LoginLookupScreen extends HookConsumerWidget {
         if (!context.mounted) return;
         await handleLockedError(context, ref, err, uname);
         if (!context.mounted) return;
+        // RATE_LIMITED: too many failed sign-in attempts (429).
+        if (err is DioException && err.response?.statusCode == 429) {
+          showSnackBar('rateLimitedMessage'.tr());
+          return;
+        }
         showErrorAlert(err);
         return;
       } finally {

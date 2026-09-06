@@ -178,6 +178,27 @@ class StargateApi extends BaseApi {
     );
   }
 
+  /// Gets the current security mode preference.
+  Future<Map<String, dynamic>> getSecurityPreferences() async {
+    final response = await get<Map<String, dynamic>>(
+      '/stargate/security/preferences',
+    );
+    return response.data!;
+  }
+
+  /// Updates the security mode preference.
+  ///
+  /// [mode] - One of "default", "lockdown", or "lockoff".
+  Future<Map<String, dynamic>> updateSecurityPreferences({
+    required String mode,
+  }) async {
+    final response = await patch<Map<String, dynamic>>(
+      '/stargate/security/preferences',
+      data: {'mode': mode},
+    );
+    return response.data!;
+  }
+
   // ==========================================
   // Punishment endpoints (/stargate/admin/accounts)
   // ==========================================

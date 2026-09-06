@@ -443,3 +443,37 @@ final class HasFediverseIdentityProvider
 
 String _$hasFediverseIdentityHash() =>
     r'f81f8f33594f0e894ccd5e863a6a45d76d629070';
+
+@ProviderFor(securityPreferencesMode)
+final securityPreferencesModeProvider = SecurityPreferencesModeProvider._();
+
+final class SecurityPreferencesModeProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  SecurityPreferencesModeProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'securityPreferencesModeProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$securityPreferencesModeHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    return securityPreferencesMode(ref);
+  }
+}
+
+String _$securityPreferencesModeHash() =>
+    r'e2be2af273be014983392b9db088de78e32404da';

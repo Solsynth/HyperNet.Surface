@@ -4138,7 +4138,7 @@ $SnAccountProfileRefCopyWith<$Res>? get profile {
 /// @nodoc
 mixin _$SnAuthDevice {
 
- String get id; String get deviceId; String get deviceName; String? get deviceLabel; String get accountId; int get platform; bool get isCurrent;
+ String get id; String get deviceId; String get deviceName; String? get deviceLabel; String get accountId; int get platform; bool get isCurrent; String get category; bool get trusted;
 /// Create a copy of SnAuthDevice
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -4151,16 +4151,16 @@ $SnAuthDeviceCopyWith<SnAuthDevice> get copyWith => _$SnAuthDeviceCopyWithImpl<S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnAuthDevice&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceLabel, deviceLabel) || other.deviceLabel == deviceLabel)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.platform, platform) || other.platform == platform)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnAuthDevice&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceLabel, deviceLabel) || other.deviceLabel == deviceLabel)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.platform, platform) || other.platform == platform)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent)&&(identical(other.category, category) || other.category == category)&&(identical(other.trusted, trusted) || other.trusted == trusted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,deviceId,deviceName,deviceLabel,accountId,platform,isCurrent);
+int get hashCode => Object.hash(runtimeType,id,deviceId,deviceName,deviceLabel,accountId,platform,isCurrent,category,trusted);
 
 @override
 String toString() {
-  return 'SnAuthDevice(id: $id, deviceId: $deviceId, deviceName: $deviceName, deviceLabel: $deviceLabel, accountId: $accountId, platform: $platform, isCurrent: $isCurrent)';
+  return 'SnAuthDevice(id: $id, deviceId: $deviceId, deviceName: $deviceName, deviceLabel: $deviceLabel, accountId: $accountId, platform: $platform, isCurrent: $isCurrent, category: $category, trusted: $trusted)';
 }
 
 
@@ -4171,7 +4171,7 @@ abstract mixin class $SnAuthDeviceCopyWith<$Res>  {
   factory $SnAuthDeviceCopyWith(SnAuthDevice value, $Res Function(SnAuthDevice) _then) = _$SnAuthDeviceCopyWithImpl;
 @useResult
 $Res call({
- String id, String deviceId, String deviceName, String? deviceLabel, String accountId, int platform, bool isCurrent
+ String id, String deviceId, String deviceName, String? deviceLabel, String accountId, int platform, bool isCurrent, String category, bool trusted
 });
 
 
@@ -4188,7 +4188,7 @@ class _$SnAuthDeviceCopyWithImpl<$Res>
 
 /// Create a copy of SnAuthDevice
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? deviceId = null,Object? deviceName = null,Object? deviceLabel = freezed,Object? accountId = null,Object? platform = null,Object? isCurrent = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? deviceId = null,Object? deviceName = null,Object? deviceLabel = freezed,Object? accountId = null,Object? platform = null,Object? isCurrent = null,Object? category = null,Object? trusted = null,}) {
   return _then(SnAuthDevice(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,deviceId: null == deviceId ? _self.deviceId : deviceId // ignore: cast_nullable_to_non_nullable
@@ -4197,6 +4197,8 @@ as String,deviceLabel: freezed == deviceLabel ? _self.deviceLabel : deviceLabel 
 as String?,accountId: null == accountId ? _self.accountId : accountId // ignore: cast_nullable_to_non_nullable
 as String,platform: null == platform ? _self.platform : platform // ignore: cast_nullable_to_non_nullable
 as int,isCurrent: null == isCurrent ? _self.isCurrent : isCurrent // ignore: cast_nullable_to_non_nullable
+as bool,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String,trusted: null == trusted ? _self.trusted : trusted // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -4279,10 +4281,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  bool isCurrent)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  bool isCurrent,  String category,  bool trusted)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SnAuthDevice() when $default != null:
-return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.isCurrent);case _:
+return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.isCurrent,_that.category,_that.trusted);case _:
   return orElse();
 
 }
@@ -4300,10 +4302,10 @@ return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  bool isCurrent)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  bool isCurrent,  String category,  bool trusted)  $default,) {final _that = this;
 switch (_that) {
 case _SnAuthDevice():
-return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.isCurrent);}
+return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.isCurrent,_that.category,_that.trusted);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -4317,10 +4319,10 @@ return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  bool isCurrent)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  bool isCurrent,  String category,  bool trusted)?  $default,) {final _that = this;
 switch (_that) {
 case _SnAuthDevice() when $default != null:
-return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.isCurrent);case _:
+return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.isCurrent,_that.category,_that.trusted);case _:
   return null;
 
 }
@@ -4332,7 +4334,7 @@ return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that
 @JsonSerializable()
 
 class _SnAuthDevice implements SnAuthDevice {
-  const _SnAuthDevice({required this.id, required this.deviceId, required this.deviceName, required this.deviceLabel, required this.accountId, required this.platform, this.isCurrent = false});
+  const _SnAuthDevice({required this.id, required this.deviceId, required this.deviceName, required this.deviceLabel, required this.accountId, required this.platform, this.isCurrent = false, this.category = 'device', this.trusted = false});
   factory _SnAuthDevice.fromJson(Map<String, dynamic> json) => _$SnAuthDeviceFromJson(json);
 
 @override final  String id;
@@ -4342,6 +4344,8 @@ class _SnAuthDevice implements SnAuthDevice {
 @override final  String accountId;
 @override final  int platform;
 @override@JsonKey() final  bool isCurrent;
+@override@JsonKey() final  String category;
+@override@JsonKey() final  bool trusted;
 
 /// Create a copy of SnAuthDevice
 /// with the given fields replaced by the non-null parameter values.
@@ -4356,16 +4360,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnAuthDevice&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceLabel, deviceLabel) || other.deviceLabel == deviceLabel)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.platform, platform) || other.platform == platform)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnAuthDevice&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceLabel, deviceLabel) || other.deviceLabel == deviceLabel)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.platform, platform) || other.platform == platform)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent)&&(identical(other.category, category) || other.category == category)&&(identical(other.trusted, trusted) || other.trusted == trusted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,deviceId,deviceName,deviceLabel,accountId,platform,isCurrent);
+int get hashCode => Object.hash(runtimeType,id,deviceId,deviceName,deviceLabel,accountId,platform,isCurrent,category,trusted);
 
 @override
 String toString() {
-  return 'SnAuthDevice(id: $id, deviceId: $deviceId, deviceName: $deviceName, deviceLabel: $deviceLabel, accountId: $accountId, platform: $platform, isCurrent: $isCurrent)';
+  return 'SnAuthDevice(id: $id, deviceId: $deviceId, deviceName: $deviceName, deviceLabel: $deviceLabel, accountId: $accountId, platform: $platform, isCurrent: $isCurrent, category: $category, trusted: $trusted)';
 }
 
 
@@ -4376,7 +4380,7 @@ abstract mixin class _$SnAuthDeviceCopyWith<$Res> implements $SnAuthDeviceCopyWi
   factory _$SnAuthDeviceCopyWith(_SnAuthDevice value, $Res Function(_SnAuthDevice) _then) = __$SnAuthDeviceCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String deviceId, String deviceName, String? deviceLabel, String accountId, int platform, bool isCurrent
+ String id, String deviceId, String deviceName, String? deviceLabel, String accountId, int platform, bool isCurrent, String category, bool trusted
 });
 
 
@@ -4393,7 +4397,7 @@ class __$SnAuthDeviceCopyWithImpl<$Res>
 
 /// Create a copy of SnAuthDevice
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? deviceId = null,Object? deviceName = null,Object? deviceLabel = freezed,Object? accountId = null,Object? platform = null,Object? isCurrent = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? deviceId = null,Object? deviceName = null,Object? deviceLabel = freezed,Object? accountId = null,Object? platform = null,Object? isCurrent = null,Object? category = null,Object? trusted = null,}) {
   return _then(_SnAuthDevice(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,deviceId: null == deviceId ? _self.deviceId : deviceId // ignore: cast_nullable_to_non_nullable
@@ -4402,6 +4406,8 @@ as String,deviceLabel: freezed == deviceLabel ? _self.deviceLabel : deviceLabel 
 as String?,accountId: null == accountId ? _self.accountId : accountId // ignore: cast_nullable_to_non_nullable
 as String,platform: null == platform ? _self.platform : platform // ignore: cast_nullable_to_non_nullable
 as int,isCurrent: null == isCurrent ? _self.isCurrent : isCurrent // ignore: cast_nullable_to_non_nullable
+as bool,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String,trusted: null == trusted ? _self.trusted : trusted // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -4420,7 +4426,7 @@ SnAuthDeviceWithSession _$SnAuthDeviceWithSessionFromJson(
 /// @nodoc
 mixin _$SnAuthDeviceWithSession {
 
- String get id; String get deviceId; String get deviceName; String? get deviceLabel; String get accountId; int get platform; List<SnAuthSession> get sessions; bool get isCurrent;
+ String get id; String get deviceId; String get deviceName; String? get deviceLabel; String get accountId; int get platform; List<SnAuthSession> get sessions; bool get isCurrent; String get category; bool get trusted;
 /// Create a copy of SnAuthDeviceWithSession
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -4433,16 +4439,16 @@ $SnAuthDeviceWithSessionCopyWith<SnAuthDeviceWithSession> get copyWith => _$SnAu
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnAuthDeviceWithSession&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceLabel, deviceLabel) || other.deviceLabel == deviceLabel)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.platform, platform) || other.platform == platform)&&const DeepCollectionEquality().equals(other.sessions, sessions)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnAuthDeviceWithSession&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceLabel, deviceLabel) || other.deviceLabel == deviceLabel)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.platform, platform) || other.platform == platform)&&const DeepCollectionEquality().equals(other.sessions, sessions)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent)&&(identical(other.category, category) || other.category == category)&&(identical(other.trusted, trusted) || other.trusted == trusted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,deviceId,deviceName,deviceLabel,accountId,platform,const DeepCollectionEquality().hash(sessions),isCurrent);
+int get hashCode => Object.hash(runtimeType,id,deviceId,deviceName,deviceLabel,accountId,platform,const DeepCollectionEquality().hash(sessions),isCurrent,category,trusted);
 
 @override
 String toString() {
-  return 'SnAuthDeviceWithSession(id: $id, deviceId: $deviceId, deviceName: $deviceName, deviceLabel: $deviceLabel, accountId: $accountId, platform: $platform, sessions: $sessions, isCurrent: $isCurrent)';
+  return 'SnAuthDeviceWithSession(id: $id, deviceId: $deviceId, deviceName: $deviceName, deviceLabel: $deviceLabel, accountId: $accountId, platform: $platform, sessions: $sessions, isCurrent: $isCurrent, category: $category, trusted: $trusted)';
 }
 
 
@@ -4453,7 +4459,7 @@ abstract mixin class $SnAuthDeviceWithSessionCopyWith<$Res>  {
   factory $SnAuthDeviceWithSessionCopyWith(SnAuthDeviceWithSession value, $Res Function(SnAuthDeviceWithSession) _then) = _$SnAuthDeviceWithSessionCopyWithImpl;
 @useResult
 $Res call({
- String id, String deviceId, String deviceName, String? deviceLabel, String accountId, int platform, List<SnAuthSession> sessions, bool isCurrent
+ String id, String deviceId, String deviceName, String? deviceLabel, String accountId, int platform, List<SnAuthSession> sessions, bool isCurrent, String category, bool trusted
 });
 
 
@@ -4470,7 +4476,7 @@ class _$SnAuthDeviceWithSessionCopyWithImpl<$Res>
 
 /// Create a copy of SnAuthDeviceWithSession
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? deviceId = null,Object? deviceName = null,Object? deviceLabel = freezed,Object? accountId = null,Object? platform = null,Object? sessions = null,Object? isCurrent = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? deviceId = null,Object? deviceName = null,Object? deviceLabel = freezed,Object? accountId = null,Object? platform = null,Object? sessions = null,Object? isCurrent = null,Object? category = null,Object? trusted = null,}) {
   return _then(SnAuthDeviceWithSession(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,deviceId: null == deviceId ? _self.deviceId : deviceId // ignore: cast_nullable_to_non_nullable
@@ -4480,6 +4486,8 @@ as String?,accountId: null == accountId ? _self.accountId : accountId // ignore:
 as String,platform: null == platform ? _self.platform : platform // ignore: cast_nullable_to_non_nullable
 as int,sessions: null == sessions ? _self.sessions : sessions // ignore: cast_nullable_to_non_nullable
 as List<SnAuthSession>,isCurrent: null == isCurrent ? _self.isCurrent : isCurrent // ignore: cast_nullable_to_non_nullable
+as bool,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String,trusted: null == trusted ? _self.trusted : trusted // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -4562,10 +4570,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  List<SnAuthSession> sessions,  bool isCurrent)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  List<SnAuthSession> sessions,  bool isCurrent,  String category,  bool trusted)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SnAuthDeviceWithSessione() when $default != null:
-return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.sessions,_that.isCurrent);case _:
+return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.sessions,_that.isCurrent,_that.category,_that.trusted);case _:
   return orElse();
 
 }
@@ -4583,10 +4591,10 @@ return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  List<SnAuthSession> sessions,  bool isCurrent)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  List<SnAuthSession> sessions,  bool isCurrent,  String category,  bool trusted)  $default,) {final _that = this;
 switch (_that) {
 case _SnAuthDeviceWithSessione():
-return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.sessions,_that.isCurrent);}
+return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.sessions,_that.isCurrent,_that.category,_that.trusted);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -4600,10 +4608,10 @@ return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  List<SnAuthSession> sessions,  bool isCurrent)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String deviceId,  String deviceName,  String? deviceLabel,  String accountId,  int platform,  List<SnAuthSession> sessions,  bool isCurrent,  String category,  bool trusted)?  $default,) {final _that = this;
 switch (_that) {
 case _SnAuthDeviceWithSessione() when $default != null:
-return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.sessions,_that.isCurrent);case _:
+return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that.accountId,_that.platform,_that.sessions,_that.isCurrent,_that.category,_that.trusted);case _:
   return null;
 
 }
@@ -4615,7 +4623,7 @@ return $default(_that.id,_that.deviceId,_that.deviceName,_that.deviceLabel,_that
 @JsonSerializable()
 
 class _SnAuthDeviceWithSessione implements SnAuthDeviceWithSession {
-  const _SnAuthDeviceWithSessione({required this.id, required this.deviceId, required this.deviceName, required this.deviceLabel, required this.accountId, required this.platform, required  List<SnAuthSession> sessions, this.isCurrent = false}): _sessions = sessions;
+  const _SnAuthDeviceWithSessione({required this.id, required this.deviceId, required this.deviceName, required this.deviceLabel, required this.accountId, required this.platform, required  List<SnAuthSession> sessions, this.isCurrent = false, this.category = 'device', this.trusted = false}): _sessions = sessions;
   factory _SnAuthDeviceWithSessione.fromJson(Map<String, dynamic> json) => _$SnAuthDeviceWithSessioneFromJson(json);
 
 @override final  String id;
@@ -4632,6 +4640,8 @@ class _SnAuthDeviceWithSessione implements SnAuthDeviceWithSession {
 }
 
 @override@JsonKey() final  bool isCurrent;
+@override@JsonKey() final  String category;
+@override@JsonKey() final  bool trusted;
 
 /// Create a copy of SnAuthDeviceWithSession
 /// with the given fields replaced by the non-null parameter values.
@@ -4646,16 +4656,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnAuthDeviceWithSessione&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceLabel, deviceLabel) || other.deviceLabel == deviceLabel)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.platform, platform) || other.platform == platform)&&const DeepCollectionEquality().equals(other._sessions, _sessions)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnAuthDeviceWithSessione&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.deviceLabel, deviceLabel) || other.deviceLabel == deviceLabel)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.platform, platform) || other.platform == platform)&&const DeepCollectionEquality().equals(other._sessions, _sessions)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent)&&(identical(other.category, category) || other.category == category)&&(identical(other.trusted, trusted) || other.trusted == trusted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,deviceId,deviceName,deviceLabel,accountId,platform,const DeepCollectionEquality().hash(_sessions),isCurrent);
+int get hashCode => Object.hash(runtimeType,id,deviceId,deviceName,deviceLabel,accountId,platform,const DeepCollectionEquality().hash(_sessions),isCurrent,category,trusted);
 
 @override
 String toString() {
-  return 'SnAuthDeviceWithSession(id: $id, deviceId: $deviceId, deviceName: $deviceName, deviceLabel: $deviceLabel, accountId: $accountId, platform: $platform, sessions: $sessions, isCurrent: $isCurrent)';
+  return 'SnAuthDeviceWithSession(id: $id, deviceId: $deviceId, deviceName: $deviceName, deviceLabel: $deviceLabel, accountId: $accountId, platform: $platform, sessions: $sessions, isCurrent: $isCurrent, category: $category, trusted: $trusted)';
 }
 
 
@@ -4666,7 +4676,7 @@ abstract mixin class _$SnAuthDeviceWithSessioneCopyWith<$Res> implements $SnAuth
   factory _$SnAuthDeviceWithSessioneCopyWith(_SnAuthDeviceWithSessione value, $Res Function(_SnAuthDeviceWithSessione) _then) = __$SnAuthDeviceWithSessioneCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String deviceId, String deviceName, String? deviceLabel, String accountId, int platform, List<SnAuthSession> sessions, bool isCurrent
+ String id, String deviceId, String deviceName, String? deviceLabel, String accountId, int platform, List<SnAuthSession> sessions, bool isCurrent, String category, bool trusted
 });
 
 
@@ -4683,7 +4693,7 @@ class __$SnAuthDeviceWithSessioneCopyWithImpl<$Res>
 
 /// Create a copy of SnAuthDeviceWithSession
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? deviceId = null,Object? deviceName = null,Object? deviceLabel = freezed,Object? accountId = null,Object? platform = null,Object? sessions = null,Object? isCurrent = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? deviceId = null,Object? deviceName = null,Object? deviceLabel = freezed,Object? accountId = null,Object? platform = null,Object? sessions = null,Object? isCurrent = null,Object? category = null,Object? trusted = null,}) {
   return _then(_SnAuthDeviceWithSessione(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,deviceId: null == deviceId ? _self.deviceId : deviceId // ignore: cast_nullable_to_non_nullable
@@ -4693,6 +4703,8 @@ as String?,accountId: null == accountId ? _self.accountId : accountId // ignore:
 as String,platform: null == platform ? _self.platform : platform // ignore: cast_nullable_to_non_nullable
 as int,sessions: null == sessions ? _self._sessions : sessions // ignore: cast_nullable_to_non_nullable
 as List<SnAuthSession>,isCurrent: null == isCurrent ? _self.isCurrent : isCurrent // ignore: cast_nullable_to_non_nullable
+as bool,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String,trusted: null == trusted ? _self.trusted : trusted // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

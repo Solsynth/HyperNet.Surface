@@ -122,6 +122,13 @@ bool hasFediverseIdentity(Ref ref) {
   return hasDefaultPublisher || hasAnyEnabledPublisher;
 }
 
+@riverpod
+Future<String> securityPreferencesMode(Ref ref) async {
+  final client = ref.read(solarNetworkClientProvider);
+  final data = await client.stargate.getSecurityPreferences();
+  return (data['mode'] as String?) ?? 'default';
+}
+
 @RoutePage()
 class AccountSettingsScreen extends HookConsumerWidget {
   const AccountSettingsScreen({super.key});
@@ -249,6 +256,97 @@ class AccountSettingsScreen extends HookConsumerWidget {
             isScrollControlled: true,
             builder: (context) => const AccountAuthorizedAppsSheet(),
           );
+        },
+      ),
+      ListTile(
+        minLeadingWidth: 48,
+        leading: const Icon(Symbols.lock),
+        title: Text('securityMode').tr(),
+        subtitle: ref.watch(securityPreferencesModeProvider).when(
+          data: (mode) => Text(
+            switch (mode) {
+              'lockdown' => 'securityModeLockdown'.tr(),
+              'lockoff' => 'securityModeLockoff'.tr(),
+              _ => 'securityModeDefault'.tr(),
+            },
+          ).fontSize(12),
+          loading: () => const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          error: (_, _) => Text('securityModeDefault'.tr()).fontSize(12),
+        ),
+        contentPadding: const EdgeInsets.only(left: 24, right: 17),
+        trailing: const Icon(Symbols.chevron_right),
+        onTap: () async {
+          final currentMode = ref.read(securityPreferencesModeProvider).value ?? 'default';
+          if (!context.mounted) return;
+          final selected = await showModalBottomSheet<String>(
+            context: context,
+            builder: (context) {
+              final theme = Theme.of(context);
+              final scheme = theme.colorScheme;
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                      child: Text(
+                        'securityMode'.tr(),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+                      child: Text(
+                        'securityModeDescription'.tr(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const Gap(8),
+                    _SecurityModeOption(
+                      value: 'default',
+                      label: 'securityModeDefault'.tr(),
+                      description: 'securityModeDefaultDescription'.tr(),
+                      isSelected: currentMode == 'default',
+                    ),
+                    _SecurityModeOption(
+                      value: 'lockdown',
+                      label: 'securityModeLockdown'.tr(),
+                      description: 'securityModeLockdownDescription'.tr(),
+                      isSelected: currentMode == 'lockdown',
+                    ),
+                    _SecurityModeOption(
+                      value: 'lockoff',
+                      label: 'securityModeLockoff'.tr(),
+                      description: 'securityModeLockoffDescription'.tr(),
+                      isSelected: currentMode == 'lockoff',
+                    ),
+                    const Gap(16),
+                  ],
+                ),
+              );
+            },
+          );
+          if (selected == null || selected == currentMode || !context.mounted) return;
+          try {
+            showLoadingModal(context);
+            final client = ref.read(solarNetworkClientProvider);
+            await client.stargate.updateSecurityPreferences(mode: selected);
+            ref.invalidate(securityPreferencesModeProvider);
+          } catch (err) {
+            showErrorAlert(err);
+          } finally {
+            if (context.mounted) {
+              hideLoadingModal(context);
+            }
+          }
         },
       ),
       ExpansionTile(
@@ -3159,4 +3257,34 @@ sealed class SnScanResult with _$SnScanResult {
 
   factory SnScanResult.fromJson(Map<String, dynamic> json) =>
       _$SnScanResultFromJson(json);
+}
+
+class _SecurityModeOption extends StatelessWidget {
+  final String value;
+  final String label;
+  final String description;
+  final bool isSelected;
+
+  const _SecurityModeOption({
+    required this.value,
+    required this.label,
+    required this.description,
+    required this.isSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return ListTile(
+      leading: Icon(
+        isSelected ? Symbols.radio_button_checked : Symbols.radio_button_unchecked,
+        color: isSelected ? scheme.primary : scheme.onSurfaceVariant,
+      ),
+      title: Text(label),
+      subtitle: Text(description).fontSize(12),
+      onTap: () => Navigator.pop(context, value),
+    );
+  }
 }
