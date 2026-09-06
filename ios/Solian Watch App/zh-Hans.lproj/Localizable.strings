@@ -369,3 +369,24 @@
 "agent.error" = "错误";
 "agent.toolRunning" = "执行中…";
 "agent.toolDone" = "完成";
+
+/* MARK: - Settings */
+"panel.settings" = "设置";
+"settings.title" = "设置";
+"settings.client" = "客户端";
+"settings.hapticFeedback" = "触觉反馈";
+"settings.showTimestamps" = "显示时间戳";
+"settings.backgroundImage" = "背景图片";
+"settings.backgroundNone" = "未设置背景";
+"settings.backgroundChoose" = "选择照片";
+"settings.backgroundClear" = "清除";
+"settings.autoRefresh" = "自动刷新";
+"settings.about" = "关于";
+"settings.watchApp" = "手表应用";
+"settings.version" = "版本";
+"settings.build" = "构建";
+"settings.server" = "服务器";
+"settings.bundleId" = "Bundle ID";
+"settings.language" = "语言";
+"settings.language.system" = "跟随系统";
+"settings.accentColor" = "主题色";

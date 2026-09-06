@@ -19,8 +19,10 @@ struct AppInfoHeaderView : View {
                 .resizable()
                 .frame(width: 30, height: 30)
 
-            Text("Solian")
-                .font(.headline)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Solian").font(.headline)
+                Text("for Apple Watch").font(.system(size: 9))
+            }
 
             Spacer(minLength: 0)
 

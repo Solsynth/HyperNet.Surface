@@ -12,6 +12,7 @@ import Combine
 struct ContentView: View {
     @StateObject private var appState = AppState.shared
     @StateObject private var summaryStore = ChatSummaryStore.shared
+    @StateObject private var settingsStore = SettingsStore.shared
     @State private var selection: Panel?
     @State private var liveCancellable: AnyCancellable?
 
@@ -23,6 +24,7 @@ struct ContentView: View {
         case wallet
         case account
         case checkIn
+        case settings
     }
 
     init() {
@@ -64,6 +66,17 @@ struct ContentView: View {
                 UserDefaults.standard.set(newValue.rawValue, forKey: "lastPanel")
             }
         }
+        .environment(\.locale, currentLocale)
+        .tint(settingsStore.accentColorName == "system" ? nil : settingsStore.resolvedAccentColor)
+    }
+
+    /// The locale derived from the user's language override, or the system default.
+    private var currentLocale: Locale {
+        let code = settingsStore.languageCode
+        if code == "system" || code.isEmpty {
+            return .current
+        }
+        return Locale(identifier: code)
     }
 
     private var totalChatUnread: Int {
@@ -83,6 +96,7 @@ struct ContentView: View {
             navTile(panel: .wallet, icon: "banknote.fill", label: L10n.panelWallet)
             navTile(panel: .account, icon: "person.circle.fill", label: L10n.panelAccount)
             navTile(panel: .checkIn, icon: "checkmark.seal.fill", label: L10n.panelCheckIn)
+            navTile(panel: .settings, icon: "gearshape.fill", label: L10n.panelSettings)
         }
         .listStyle(.automatic)
     }
@@ -147,6 +161,10 @@ struct ContentView: View {
             AccountView().environmentObject(appState)
         case .checkIn:
             CheckInView().environmentObject(appState)
+        case .settings:
+            SettingsView()
+                .environmentObject(appState)
+                .environmentObject(settingsStore)
         case .none:
             Text(L10n.panelSelectPanel)
         }

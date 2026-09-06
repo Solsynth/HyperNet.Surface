@@ -15,6 +15,10 @@ struct WatchRunner_Watch_AppApp: App {
     private let chatCache: ChatCache
 
     init() {
+        // Apply the user's language override BEFORE any Bundle.main access.
+        SettingsStore.applyLanguageOverride()
+        OverrideBundle.installAsMainBundle()
+
         // The app-wide cache; ChatCache.shared must point at the real store.
         let cache = Self.makeChatCache()
         self.chatCache = cache

@@ -369,3 +369,24 @@
 "agent.error" = "Error";
 "agent.toolRunning" = "Running…";
 "agent.toolDone" = "Done";
+
+/* MARK: - Settings */
+"panel.settings" = "Settings";
+"settings.title" = "Settings";
+"settings.backgroundImage" = "Background Image";
+"settings.backgroundNone" = "No background";
+"settings.backgroundChoose" = "Choose Photo";
+"settings.backgroundClear" = "Clear";
+"settings.client" = "Client";
+"settings.hapticFeedback" = "Haptic Feedback";
+"settings.showTimestamps" = "Show Timestamps";
+"settings.autoRefresh" = "Auto Refresh";
+"settings.about" = "About";
+"settings.watchApp" = "Watch App";
+"settings.version" = "Version";
+"settings.build" = "Build";
+"settings.server" = "Server";
+"settings.bundleId" = "Bundle ID";
+"settings.language" = "Language";
+"settings.language.system" = "System Default";
+"settings.accentColor" = "Accent Color";
