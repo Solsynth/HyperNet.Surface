@@ -12,7 +12,9 @@ public enum L10n {
     // MARK: - ContentView (Sidebar / Navigation)
     static let panelExplore = NSLocalizedString("panel.explore", comment: "Explore panel title")
     static let panelChat = NSLocalizedString("panel.chat", comment: "Chat panel title")
+    static let panelAgent = NSLocalizedString("panel.agent", comment: "Agent panel title")
     static let panelNotifications = NSLocalizedString("panel.notifications", comment: "Notifications panel title")
+    static let panelWallet = NSLocalizedString("panel.wallet", comment: "Wallet panel title")
     static let panelAccount = NSLocalizedString("panel.account", comment: "Account panel title")
     static let panelCheckIn = NSLocalizedString("panel.checkIn", comment: "Check In panel title")
     static let panelSelectPanel = NSLocalizedString("panel.selectPanel", comment: "Placeholder when no panel selected")
@@ -86,6 +88,29 @@ public enum L10n {
     static let accountQr = NSLocalizedString("account.qr", comment: "Account QR row label")
     static let accountQrTitle = NSLocalizedString("account.qr.title", comment: "Account QR navigation title")
     static let accountQrShare = NSLocalizedString("account.qr.share", comment: "Share account QR link")
+
+    // MARK: - WalletView
+    static let walletTitle = NSLocalizedString("wallet.title", comment: "Wallet navigation title")
+    static let walletEmpty = NSLocalizedString("wallet.empty", comment: "No wallet found")
+    static let walletPrimary = NSLocalizedString("wallet.primary", comment: "Primary wallet badge")
+    static let walletRecentTransactions = NSLocalizedString("wallet.recentTransactions", comment: "Recent transactions header")
+    static let walletAvailable = NSLocalizedString("wallet.available", comment: "Available amount label: %@")
+    static let walletUnknown = NSLocalizedString("wallet.unknown", comment: "Unknown counterparty")
+    static let walletStatusPending = NSLocalizedString("wallet.status.pending", comment: "Pending status")
+    static let walletStatusFrozen = NSLocalizedString("wallet.status.frozen", comment: "Frozen status")
+    static let walletStatusRefunded = NSLocalizedString("wallet.status.refunded", comment: "Refunded status")
+    static let walletStatusCancelled = NSLocalizedString("wallet.status.cancelled", comment: "Cancelled status")
+    static let walletCurrencyGolds = NSLocalizedString("wallet.currency.golds", comment: "Gold currency")
+    static let walletCurrencyBits = NSLocalizedString("wallet.currency.bits", comment: "Bits currency")
+    static let walletCurrencyCrystals = NSLocalizedString("wallet.currency.crystals", comment: "Crystal currency")
+    static let walletCurrencyFlames = NSLocalizedString("wallet.currency.flames", comment: "Flame currency")
+
+    // MARK: - WalletQrView
+    static let walletQrTitle = NSLocalizedString("wallet.qr.title", comment: "Wallet QR title")
+    static let walletQrPublicIdNotEnabled = NSLocalizedString("wallet.qr.publicIdNotEnabled", comment: "Public ID not enabled")
+    static let walletQrPublicIdNotEnabledHint = NSLocalizedString("wallet.qr.publicIdNotEnabledHint", comment: "Enable public ID hint")
+    static let walletQrPublicIdLabel = NSLocalizedString("wallet.qr.publicIdLabel", comment: "Wallet Public ID label")
+    static let walletQrCopyLink = NSLocalizedString("wallet.qr.shareLink", comment: "Share transfer link button")
 
     // MARK: - CheckInView
     static let checkInTitle = NSLocalizedString("checkin.title", comment: "Check-in title")
@@ -337,4 +362,16 @@ public enum L10n {
     static let fortuneStudy = NSLocalizedString("fortune.study", comment: "Study")
     static let fortuneWork = NSLocalizedString("fortune.work", comment: "Work")
     static let fortuneHealth = NSLocalizedString("fortune.health", comment: "Health")
+
+    // MARK: - Agent Chat
+    static let agentTitle = NSLocalizedString("agent.title", comment: "Agent chat title")
+    static let agentPickAgent = NSLocalizedString("agent.pickAgent", comment: "Pick agent")
+    static let agentSelectAgent = NSLocalizedString("agent.selectAgent", comment: "Select agent")
+    static let agentNewChat = NSLocalizedString("agent.newChat", comment: "New chat")
+    static let agentMessagePlaceholder = NSLocalizedString("agent.messagePlaceholder", comment: "Message placeholder")
+    static let agentThinking = NSLocalizedString("agent.thinking", comment: "Thinking indicator")
+    static let agentThinkingDone = NSLocalizedString("agent.thinkingDone", comment: "Thinking done")
+    static let agentError = NSLocalizedString("agent.error", comment: "Agent error")
+    static let agentToolRunning = NSLocalizedString("agent.toolRunning", comment: "Tool running")
+    static let agentToolDone = NSLocalizedString("agent.toolDone", comment: "Tool done")
 }

@@ -3,7 +3,9 @@
 /* MARK: - ContentView (Sidebar / Navigation) */
 "panel.explore" = "探索";
 "panel.chat" = "聊天";
+"panel.agent" = "智能助理";
 "panel.notifications" = "通知";
+"panel.wallet" = "钱包";
 "panel.account" = "账户";
 "panel.checkIn" = "签到";
 "panel.selectPanel" = "选择一个面板";
@@ -71,6 +73,29 @@
 "account.qr" = "账户二维码";
 "account.qr.title" = "账户二维码";
 "account.qr.share" = "分享账户";
+
+/* MARK: - WalletView */
+"wallet.title" = "钱包";
+"wallet.empty" = "未找到钱包";
+"wallet.primary" = "默认";
+"wallet.recentTransactions" = "最近交易";
+"wallet.available" = "可用：%@";
+"wallet.unknown" = "未知";
+"wallet.status.pending" = "待处理";
+"wallet.status.frozen" = "已冻结";
+"wallet.status.refunded" = "已退款";
+"wallet.status.cancelled" = "已取消";
+"wallet.currency.golds" = "金币";
+"wallet.currency.bits" = "Bits";
+"wallet.currency.crystals" = "水晶";
+"wallet.currency.flames" = "火焰";
+
+/* MARK: - WalletQrView */
+"wallet.qr.title" = "钱包 QR";
+"wallet.qr.publicIdNotEnabled" = "尚未启用公开 ID";
+"wallet.qr.publicIdNotEnabledHint" = "请先在 Solian 应用中启用钱包的公开 ID。";
+"wallet.qr.publicIdLabel" = "钱包公开 ID";
+"wallet.qr.shareLink" = "分享转账链接";
 
 /* MARK: - CheckInView */
 "checkin.title" = "签到";
@@ -332,3 +357,15 @@
 "search.posts" = "搜索帖子";
 "search.placeholder" = "搜索...";
 "search.hint" = "输入以搜索帖子";
+
+/* MARK: - Agent Chat */
+"agent.title" = "智能助理";
+"agent.pickAgent" = "选择助理";
+"agent.selectAgent" = "选择助理";
+"agent.newChat" = "新对话";
+"agent.messagePlaceholder" = "消息…";
+"agent.thinking" = "思考中…";
+"agent.thinkingDone" = "思考完成";
+"agent.error" = "错误";
+"agent.toolRunning" = "执行中…";
+"agent.toolDone" = "完成";

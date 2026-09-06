@@ -3,7 +3,9 @@
 /* MARK: - ContentView (Sidebar / Navigation) */
 "panel.explore" = "Explore";
 "panel.chat" = "Chat";
+"panel.agent" = "Agent";
 "panel.notifications" = "Notifications";
+"panel.wallet" = "Wallet";
 "panel.account" = "Account";
 "panel.checkIn" = "Check In";
 "panel.selectPanel" = "Select a panel";
@@ -71,6 +73,29 @@
 "account.qr" = "Account QR";
 "account.qr.title" = "Account QR";
 "account.qr.share" = "Share Account";
+
+/* MARK: - WalletView */
+"wallet.title" = "Wallet";
+"wallet.empty" = "No wallet found";
+"wallet.primary" = "Primary";
+"wallet.recentTransactions" = "Recent Transactions";
+"wallet.available" = "Available: %@";
+"wallet.unknown" = "Unknown";
+"wallet.status.pending" = "Pending";
+"wallet.status.frozen" = "Frozen";
+"wallet.status.refunded" = "Refunded";
+"wallet.status.cancelled" = "Cancelled";
+"wallet.currency.golds" = "Gold";
+"wallet.currency.bits" = "Bits";
+"wallet.currency.crystals" = "Crystal";
+"wallet.currency.flames" = "Flame";
+
+/* MARK: - WalletQrView */
+"wallet.qr.title" = "Wallet QR";
+"wallet.qr.publicIdNotEnabled" = "Public ID not enabled";
+"wallet.qr.publicIdNotEnabledHint" = "Enable your wallet's public ID in the Solian app first.";
+"wallet.qr.publicIdLabel" = "Wallet Public ID";
+"wallet.qr.shareLink" = "Share Transfer Link";
 
 /* MARK: - CheckInView */
 "checkin.title" = "Check In";
@@ -332,3 +357,15 @@
 "search.posts" = "Search Posts";
 "search.placeholder" = "Search...";
 "search.hint" = "Type to search posts";
+
+/* MARK: - Agent Chat */
+"agent.title" = "Agent";
+"agent.pickAgent" = "Pick Agent";
+"agent.selectAgent" = "Select Agent";
+"agent.newChat" = "New Chat";
+"agent.messagePlaceholder" = "Message…";
+"agent.thinking" = "Thinking…";
+"agent.thinkingDone" = "Thinking done";
+"agent.error" = "Error";
+"agent.toolRunning" = "Running…";
+"agent.toolDone" = "Done";

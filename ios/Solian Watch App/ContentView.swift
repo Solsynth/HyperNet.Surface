@@ -18,7 +18,9 @@ struct ContentView: View {
     enum Panel: String, Hashable {
         case explore
         case chat
+        case agent
         case notifications
+        case wallet
         case account
         case checkIn
     }
@@ -76,7 +78,9 @@ struct ContentView: View {
 
             navTile(panel: .explore, icon: "globe.fill", label: L10n.panelExplore)
             navTile(panel: .chat, icon: "message.fill", label: L10n.panelChat, unread: totalChatUnread)
+            navTile(panel: .agent, icon: "sparkles", label: L10n.panelAgent)
             navTile(panel: .notifications, icon: "bell.fill", label: L10n.panelNotifications)
+            navTile(panel: .wallet, icon: "banknote.fill", label: L10n.panelWallet)
             navTile(panel: .account, icon: "person.circle.fill", label: L10n.panelAccount)
             navTile(panel: .checkIn, icon: "checkmark.seal.fill", label: L10n.panelCheckIn)
         }
@@ -132,8 +136,13 @@ struct ContentView: View {
             ChatView()
                 .environmentObject(appState)
                 .environmentObject(summaryStore)
+        case .agent:
+            AgentChatView()
+                .environmentObject(appState)
         case .notifications:
             NotificationView().environmentObject(appState)
+        case .wallet:
+            WalletView().environmentObject(appState)
         case .account:
             AccountView().environmentObject(appState)
         case .checkIn:

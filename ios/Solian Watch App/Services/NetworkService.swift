@@ -1940,4 +1940,282 @@ class NetworkService {
         
         self.currentConnectionState = .disconnected
     }
+
+    // MARK: - Personality Core (Agent Chat) API
+
+    /// GET /personality/agents — list available agents.
+    func fetchAgentList(token: String, serverUrl: String) async throws -> [SnAgent] {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("/personality/agents"),
+            resolvingAgainstBaseURL: false
+        )!
+        components.queryItems = [URLQueryItem(name: "pet", value: "true")]
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
+        return try Self.decodeJSON([SnAgent].self, from: data)
+    }
+
+    /// GET /personality/conversations — list persisted conversations.
+    func fetchAgentConversations(token: String, serverUrl: String, take: Int = 50, offset: Int = 0) async throws -> [SnAgentConversation] {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("/personality/conversations"),
+            resolvingAgainstBaseURL: false
+        )!
+        components.queryItems = [
+            URLQueryItem(name: "take", value: "\(take)"),
+            URLQueryItem(name: "offset", value: "\(offset)"),
+        ]
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
+        return try Self.decodeJSON([SnAgentConversation].self, from: data)
+    }
+
+    /// POST /personality/conversations — create a new conversation.
+    func createAgentConversation(agentId: String, title: String = "", token: String, serverUrl: String) async throws -> String {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent("/personality/conversations")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["agent_id": agentId, "title": title])
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let id = dict?["id"] as? String else { throw URLError(.badServerResponse) }
+        return id
+    }
+
+    /// GET /personality/conversations/{id}/messages — load conversation history.
+    func fetchAgentMessages(conversationId: String, token: String, serverUrl: String, take: Int = 200, offset: Int = 0) async throws -> [SnAgentMessage] {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("/personality/conversations/\(conversationId)/messages"),
+            resolvingAgainstBaseURL: false
+        )!
+        components.queryItems = [
+            URLQueryItem(name: "take", value: "\(take)"),
+            URLQueryItem(name: "offset", value: "\(offset)"),
+        ]
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
+        return try Self.decodeJSON([SnAgentMessage].self, from: data)
+    }
+
+    /// POST /personality/conversations/{id}/runs — send a message and stream
+    /// the response via SSE. The caller parses `event:` / `data:` lines from
+    /// the returned `URLSession.AsyncBytes` stream.
+    ///
+    /// Event types:
+    /// - `message.delta` → `{ "delta": "..." }`
+    /// - `reasoning.delta` → `{ "delta": "..." }`
+    /// - `tool_call.delta` → `{ "id", "name", "arguments" }`
+    /// - `tool_call.completed` → `{ "id", "name", "arguments", "result" }`
+    /// - `message.completed` → `{ "content": "..." }`
+    /// - `run.failed` → `{ "error": "..." }`
+    func runAgentConversation(
+        conversationId: String,
+        message: String,
+        token: String,
+        serverUrl: String,
+        onChunk: @escaping @Sendable (String) -> Void,
+        onReasoning: @escaping @Sendable (String) -> Void,
+        onToolCall: @escaping @Sendable (String, String, [String: Any]) -> Void,
+        onToolResult: @escaping @Sendable (String, String, [String: Any], String) -> Void,
+        onCompleted: @escaping @Sendable (String) -> Void,
+        onError: @escaping @Sendable (String) -> Void
+    ) async throws {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent("/personality/conversations/\(conversationId)/runs")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "message": message,
+            "stream": true,
+        ])
+
+        let (bytes, response) = try await session.bytes(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+
+        // SSE framing: accumulate bytes into lines. A blank line dispatches
+        // the current event. Each line is either "event: xxx" or "data: xxx".
+        var currentEvent = ""
+        var currentDataLines: [String] = []
+        var lineBuffer = Data()
+
+        for try await byte in bytes {
+            if byte == 0x0A { // \n
+                if lineBuffer.isEmpty {
+                    // Blank line → dispatch accumulated event
+                    let payload = currentDataLines.joined(separator: "\n")
+                    if !payload.isEmpty {
+                        Self.dispatchAgentSSE(
+                            eventType: currentEvent,
+                            payload: payload,
+                            onChunk: onChunk,
+                            onReasoning: onReasoning,
+                            onToolCall: onToolCall,
+                            onToolResult: onToolResult,
+                            onCompleted: onCompleted,
+                            onError: onError
+                        )
+                    }
+                    currentEvent = ""
+                    currentDataLines = []
+                } else if let line = String(data: lineBuffer, encoding: .utf8) {
+                    if line.hasPrefix("event: ") {
+                        currentEvent = String(line.dropFirst(7))
+                    } else if line.hasPrefix("data: ") {
+                        currentDataLines.append(String(line.dropFirst(6)))
+                    } else if line.hasPrefix("data:") {
+                        // Tolerate no space after colon
+                        currentDataLines.append(String(line.dropFirst(5)))
+                    }
+                }
+                lineBuffer = Data()
+            } else if byte != 0x0D { // skip \r
+                lineBuffer.append(byte)
+            }
+        }
+
+        // Flush any remaining partial line
+        if !lineBuffer.isEmpty || !currentDataLines.isEmpty {
+            let payload = currentDataLines.joined(separator: "\n")
+            if !payload.isEmpty {
+                Self.dispatchAgentSSE(
+                    eventType: currentEvent,
+                    payload: payload,
+                    onChunk: onChunk,
+                    onReasoning: onReasoning,
+                    onToolCall: onToolCall,
+                    onToolResult: onToolResult,
+                    onCompleted: onCompleted,
+                    onError: onError
+                )
+            }
+        }
+    }
+
+    /// Dispatch a parsed SSE event to the appropriate callback.
+    private static func dispatchAgentSSE(
+        eventType: String,
+        payload: String,
+        onChunk: @escaping @Sendable (String) -> Void,
+        onReasoning: @escaping @Sendable (String) -> Void,
+        onToolCall: @escaping @Sendable (String, String, [String: Any]) -> Void,
+        onToolResult: @escaping @Sendable (String, String, [String: Any], String) -> Void,
+        onCompleted: @escaping @Sendable (String) -> Void,
+        onError: @escaping @Sendable (String) -> Void
+    ) {
+        guard let jsonData = payload.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            return
+        }
+
+        switch eventType {
+        case "message.delta":
+            if let delta = dict["delta"] as? String, !delta.isEmpty {
+                onChunk(delta)
+            }
+        case "reasoning.delta":
+            if let delta = dict["delta"] as? String, !delta.isEmpty {
+                onReasoning(delta)
+            }
+        case "tool_call.delta":
+            let name = dict["name"] as? String ?? ""
+            let id = dict["id"] as? String ?? ""
+            var args: [String: Any] = [:]
+            if let raw = dict["arguments"] as? [String: Any] {
+                args = raw
+            } else if let rawStr = dict["arguments"] as? String,
+                      let decoded = try? JSONSerialization.jsonObject(with: Data(rawStr.utf8)) as? [String: Any] {
+                args = decoded
+            }
+            if !name.isEmpty { onToolCall(id, name, args) }
+        case "tool_call.completed":
+            let name = dict["name"] as? String ?? ""
+            let id = dict["id"] as? String ?? ""
+            let result = dict["result"] as? String ?? ""
+            var args: [String: Any] = [:]
+            if let raw = dict["arguments"] as? [String: Any] {
+                args = raw
+            } else if let rawStr = dict["arguments"] as? String,
+                      let decoded = try? JSONSerialization.jsonObject(with: Data(rawStr.utf8)) as? [String: Any] {
+                args = decoded
+            }
+            if !name.isEmpty { onToolResult(id, name, args, result) }
+        case "message.completed":
+            let content = dict["content"] as? String ?? ""
+            if !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                onCompleted(content)
+            }
+        case "run.failed":
+            let error = dict["error"] as? String ?? "Conversation run failed."
+            onError(error)
+        default:
+            break
+        }
+    }
+
+    // MARK: - Wallet
+
+    /// GET /wallet/wallets — default wallet for the current user.
+    func fetchWallet(token: String, serverUrl: String) async throws -> SnWatchWallet? {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent("/wallet/wallets")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        if httpResponse.statusCode == 404 { return nil }
+        guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
+        return try Self.decodeJSON(SnWatchWallet.self, from: data)
+    }
+
+    /// GET /wallet/wallets/transactions — recent transactions.
+    func fetchTransactions(offset: Int = 0, take: Int = 20, token: String, serverUrl: String) async throws -> [SnWatchTransaction] {
+        guard let baseURL = URL(string: serverUrl) else { throw URLError(.badURL) }
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("/wallet/wallets/transactions"),
+            resolvingAgainstBaseURL: false
+        )!
+        components.queryItems = [
+            URLQueryItem(name: "offset", value: "\(offset)"),
+            URLQueryItem(name: "take", value: "\(take)"),
+        ]
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("SolianWatch/1.0", forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
+        return try Self.decodeJSON([SnWatchTransaction].self, from: data)
+    }
 }

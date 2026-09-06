@@ -2158,3 +2158,285 @@ struct SnFortuneSaying: Codable, Identifiable {
 
     var id: String { content }
 }
+
+// MARK: - Personality Core (Agent Chat) Models
+
+/// An agent available for conversation on Personality Core.
+/// Mirrors SynthPet's `PersonalityAgent`.
+struct SnAgent: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let isPet: Bool?
+
+    var displayName: String { name.isEmpty ? "Unnamed agent" : name }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, description
+        case isPet = "is_pet"
+    }
+}
+
+/// A persisted conversation thread on Personality Core.
+struct SnAgentConversation: Codable, Identifiable {
+    let id: String
+    let agentId: String
+    let title: String
+    let lastMessageAt: Date?
+
+    var displayName: String { title.trimmingCharacters(in: .whitespaces).isEmpty ? "Untitled" : title.trimmingCharacters(in: .whitespaces) }
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case agentId = "agent_id"
+        case lastMessageAt = "last_message_at"
+    }
+}
+
+/// A tool call captured in an assistant message's metadata.
+struct SnAgentToolCall: Codable, Identifiable {
+    let id: String
+    let name: String
+    let arguments: String
+}
+
+/// A single message in a Personality Core conversation.
+struct SnAgentMessage: Codable, Identifiable {
+    let id: String
+    let role: String
+    let content: String
+    let attachmentIds: [String]
+    let reasoningContent: String?
+    let toolCalls: [SnAgentToolCall]
+    let toolCallId: String?
+    let toolName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case role, content, metadata
+        case attachmentIds = "attachment_ids"
+        case reasoningContent = "reasoning_content"
+        case toolCalls = "tool_calls"
+        case toolCallId = "tool_call_id"
+        case toolName = "tool_name"
+    }
+
+    init(role: String, content: String, attachmentIds: [String] = [], reasoningContent: String? = nil, toolCalls: [SnAgentToolCall] = [], toolCallId: String? = nil, toolName: String? = nil) {
+        self.id = UUID().uuidString
+        self.role = role
+        self.content = content
+        self.attachmentIds = attachmentIds
+        self.reasoningContent = reasoningContent
+        self.toolCalls = toolCalls
+        self.toolCallId = toolCallId
+        self.toolName = toolName
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = UUID().uuidString
+        role = try container.decodeIfPresent(String.self, forKey: .role) ?? ""
+        content = try container.decodeIfPresent(String.self, forKey: .content) ?? ""
+
+        // Metadata is a nested dict containing tool_calls, reasoning_content, etc.
+        let metadata = try? container.decodeIfPresent([String: AnyCodable].self, forKey: .metadata)
+        let meta = metadata ?? [:]
+
+        let rawAttachments = meta["attachment_ids"]
+        if let arr = rawAttachments?.value as? [Any] {
+            attachmentIds = arr.compactMap { $0 as? String }
+        } else {
+            attachmentIds = []
+        }
+
+        let reasoningRaw = (meta["reasoning_content"]?.value as? String) ?? ""
+        reasoningContent = reasoningRaw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : reasoningRaw
+
+        var calls: [SnAgentToolCall] = []
+        if let rawCalls = meta["tool_calls"]?.value as? [Any] {
+            for call in rawCalls {
+                guard let callDict = call as? [String: Any] else { continue }
+                let callId = callDict["id"] as? String ?? ""
+                let function = callDict["function"] as? [String: Any]
+                let name = function?["name"] as? String ?? ""
+                let arguments = function?["arguments"] as? String ?? ""
+                calls.append(SnAgentToolCall(id: callId, name: name, arguments: arguments))
+            }
+        }
+        toolCalls = calls
+
+        let tcid = meta["tool_call_id"]?.value as? String ?? ""
+        toolCallId = tcid.isEmpty ? nil : tcid
+        let tn = meta["tool_name"]?.value as? String ?? ""
+        toolName = tn.isEmpty ? nil : tn
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(role, forKey: .role)
+        try container.encode(content, forKey: .content)
+        try container.encode(attachmentIds, forKey: .attachmentIds)
+        try container.encodeIfPresent(reasoningContent, forKey: .reasoningContent)
+        try container.encode(toolCalls, forKey: .toolCalls)
+        try container.encodeIfPresent(toolCallId, forKey: .toolCallId)
+        try container.encodeIfPresent(toolName, forKey: .toolName)
+    }
+}
+
+/// A bubble rendered in the agent conversation timeline.
+enum AgentBubbleKind {
+    case user
+    case assistant
+    case thinking
+    case tool
+}
+
+struct AgentBubble: Identifiable {
+    let id = UUID()
+    let kind: AgentBubbleKind
+    var text: String
+    var streaming: Bool
+    var toolCallId: String?
+    var args: [String: Any]?
+    var toolResult: String?
+    var toolRunning: Bool
+    var collapsed: Bool
+
+    init(_ kind: AgentBubbleKind, _ text: String, streaming: Bool = false, toolCallId: String? = nil, args: [String: Any]? = nil, toolResult: String? = nil, toolRunning: Bool = false, collapsed: Bool = false) {
+        self.kind = kind
+        self.text = text
+        self.streaming = streaming
+        self.toolCallId = toolCallId
+        self.args = args
+        self.toolResult = toolResult
+        self.toolRunning = toolRunning
+        self.collapsed = collapsed
+    }
+}
+
+// MARK: - Wallet Models
+
+struct SnWatchWallet: Codable, Identifiable {
+    let id: String
+    let name: String
+    let isPrimary: Bool
+    let publicId: String?
+    let pockets: [SnWatchWalletPocket]
+    let account: SnWatchWalletAccount?
+    let accountId: String?
+    let realmId: String?
+    let createdAt: Date?
+    let updatedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, pockets, account
+        case isPrimary = "is_primary"
+        case publicId = "public_id"
+        case accountId = "account_id"
+        case realmId = "realm_id"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        isPrimary = (try? c.decode(Bool.self, forKey: .isPrimary)) ?? false
+        publicId = try c.decodeIfPresent(String.self, forKey: .publicId)
+        pockets = (try? c.decode([SnWatchWalletPocket].self, forKey: .pockets)) ?? []
+        account = try c.decodeIfPresent(SnWatchWalletAccount.self, forKey: .account)
+        accountId = try c.decodeIfPresent(String.self, forKey: .accountId)
+        realmId = try c.decodeIfPresent(String.self, forKey: .realmId)
+        createdAt = try? c.decodeIfPresent(Date.self, forKey: .createdAt)
+        updatedAt = try? c.decodeIfPresent(Date.self, forKey: .updatedAt)
+    }
+}
+
+/// Lightweight account summary embedded in wallet responses. Distinct from the
+/// full `SnAccount` (which has a custom decoder) to keep Codable simple.
+struct SnWatchWalletAccount: Codable {
+    let id: String
+    let name: String
+    let nick: String
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        nick = (try? c.decode(String.self, forKey: .nick)) ?? name
+    }
+}
+
+struct SnWatchWalletPocket: Codable, Identifiable {
+    let id: String
+    let currency: String
+    let amount: Double
+    let heldAmount: Double
+    let walletId: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, currency, amount
+        case heldAmount = "held_amount"
+        case walletId = "wallet_id"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        currency = try c.decode(String.self, forKey: .currency)
+        amount = try c.decode(Double.self, forKey: .amount)
+        heldAmount = (try? c.decode(Double.self, forKey: .heldAmount)) ?? 0
+        walletId = try c.decodeIfPresent(String.self, forKey: .walletId)
+    }
+
+    var availableAmount: Double {
+        amount - heldAmount
+    }
+}
+
+struct SnWatchTransaction: Codable, Identifiable {
+    let id: String
+    let currency: String
+    let amount: Double
+    let remarks: String?
+    let type: Int
+    let status: Int
+    let isFrozen: Bool?
+    let requireConfirmation: Bool?
+    let payerWalletId: String?
+    let payerWallet: SnWatchWallet?
+    let payeeWalletId: String?
+    let payeeWallet: SnWatchWallet?
+    let createdAt: Date
+    let updatedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, currency, amount, remarks, type, status
+        case isFrozen = "is_frozen"
+        case requireConfirmation = "require_confirmation"
+        case payerWalletId = "payer_wallet_id"
+        case payerWallet = "payer_wallet"
+        case payeeWalletId = "payee_wallet_id"
+        case payeeWallet = "payee_wallet"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        currency = try c.decode(String.self, forKey: .currency)
+        amount = try c.decode(Double.self, forKey: .amount)
+        remarks = try c.decodeIfPresent(String.self, forKey: .remarks)
+        type = (try? c.decode(Int.self, forKey: .type)) ?? 0
+        status = (try? c.decode(Int.self, forKey: .status)) ?? 2
+        isFrozen = try c.decodeIfPresent(Bool.self, forKey: .isFrozen)
+        requireConfirmation = try c.decodeIfPresent(Bool.self, forKey: .requireConfirmation)
+        payerWalletId = try c.decodeIfPresent(String.self, forKey: .payerWalletId)
+        payerWallet = try c.decodeIfPresent(SnWatchWallet.self, forKey: .payerWallet)
+        payeeWalletId = try c.decodeIfPresent(String.self, forKey: .payeeWalletId)
+        payeeWallet = try c.decodeIfPresent(SnWatchWallet.self, forKey: .payeeWallet)
+        createdAt = try c.decode(Date.self, forKey: .createdAt)
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt)
+    }
+}

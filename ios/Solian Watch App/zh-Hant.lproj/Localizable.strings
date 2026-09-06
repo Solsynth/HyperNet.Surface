@@ -3,7 +3,9 @@
 /* MARK: - ContentView (Sidebar / Navigation) */
 "panel.explore" = "探索";
 "panel.chat" = "聊天";
+"panel.agent" = "智能助理";
 "panel.notifications" = "通知";
+"panel.wallet" = "錢包";
 "panel.account" = "帳戶";
 "panel.checkIn" = "簽到";
 "panel.selectPanel" = "選擇一個面板";
@@ -70,7 +72,30 @@
 /* MARK: - AccountQrView */
 "account.qr" = "帳戶二維碼";
 "account.qr.title" = "帳戶二維碼";
-"account.qr.share" = "分享帳戶";
+"account.qr.share" = "分享帳號";
+
+/* MARK: - WalletView */
+"wallet.title" = "錢包";
+"wallet.empty" = "找不到錢包";
+"wallet.primary" = "預設";
+"wallet.recentTransactions" = "最近交易";
+"wallet.available" = "可用：%@";
+"wallet.unknown" = "未知";
+"wallet.status.pending" = "待處理";
+"wallet.status.frozen" = "已凍結";
+"wallet.status.refunded" = "已退款";
+"wallet.status.cancelled" = "已取消";
+"wallet.currency.golds" = "金幣";
+"wallet.currency.bits" = "Bits";
+"wallet.currency.crystals" = "水晶";
+"wallet.currency.flames" = "火焰";
+
+/* MARK: - WalletQrView */
+"wallet.qr.title" = "錢包 QR";
+"wallet.qr.publicIdNotEnabled" = "尚未啟用公開 ID";
+"wallet.qr.publicIdNotEnabledHint" = "請先在 Solian 應用程式中啟用錢包的公開 ID。";
+"wallet.qr.publicIdLabel" = "錢包公開 ID";
+"wallet.qr.shareLink" = "分享轉帳連結";
 
 /* MARK: - CheckInView */
 "checkin.title" = "簽到";
@@ -332,3 +357,15 @@
 "search.posts" = "搜尋貼文";
 "search.placeholder" = "搜尋...";
 "search.hint" = "輸入以搜尋貼文";
+
+/* MARK: - Agent Chat */
+"agent.title" = "智能助理";
+"agent.pickAgent" = "選擇助理";
+"agent.selectAgent" = "選擇助理";
+"agent.newChat" = "新對話";
+"agent.messagePlaceholder" = "訊息…";
+"agent.thinking" = "思考中…";
+"agent.thinkingDone" = "思考完成";
+"agent.error" = "錯誤";
+"agent.toolRunning" = "執行中…";
+"agent.toolDone" = "完成";
