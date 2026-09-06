@@ -13,6 +13,7 @@ import 'package:island/accounts/account_pod.dart';
 import 'package:island/core/database.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
+import 'package:island_ui_foundation/island_ui_foundation.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -292,18 +293,7 @@ class RelationshipListTile extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (relationship.status >= 100 && onBlockWithExpiry != null)
-                        PopupMenuItem(
-                          onTap: () => _showBlockExpirySheet(context, relationship),
-                          child: Row(
-                            children: [
-                              const Icon(Symbols.block),
-                              const Gap(12),
-                              Text('blockUser').tr(),
-                            ],
-                          ),
-                        )
-                      else if (relationship.status == -50 && onBlockWithExpiry != null)
+                      if (relationship.status > -100 && onBlockWithExpiry != null)
                         PopupMenuItem(
                           onTap: () => _showBlockExpirySheet(context, relationship),
                           child: Row(
@@ -325,25 +315,22 @@ class RelationshipListTile extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (relationship.status >= 100 && onMuteWithExpiry != null)
+                      if (onMuteWithExpiry != null)
                         PopupMenuItem(
                           onTap: () => _showMuteExpirySheet(context, relationship),
                           child: Row(
                             children: [
-                              const Icon(Symbols.volume_off),
+                              Icon(
+                                relationship.status == -50
+                                    ? Symbols.volume_off
+                                    : Symbols.volume_off,
+                              ),
                               const Gap(12),
-                              Text('muteUser').tr(),
-                            ],
-                          ),
-                        )
-                      else if (relationship.status == -50 && onMuteWithExpiry != null)
-                        PopupMenuItem(
-                          onTap: () => onMuteWithExpiry?.call(relationship, null),
-                          child: Row(
-                            children: [
-                              const Icon(Symbols.volume_up),
-                              const Gap(12),
-                              Text('unmuteUser').tr(),
+                              Text(
+                                relationship.status == -50
+                                    ? 'updateMuteDuration'.tr()
+                                    : 'muteUser'.tr(),
+                              ),
                             ],
                           ),
                         ),
@@ -396,14 +383,19 @@ class RelationshipListTile extends StatelessWidget {
     BuildContext context,
     SnRelationship relationship,
   ) {
+    final isMuted = relationship.status == -50;
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => _ExpiryDurationSheet(
-        title: 'muteUser'.tr(),
+        title: isMuted ? 'updateMuteDuration'.tr() : 'muteUser'.tr(),
         showDegradeOption: false,
+        showUnmuteOption: isMuted,
+        expiresAt: relationship.expiredAt,
         onDurationSelected: (expiresIn, degradeTo) {
           onMuteWithExpiry?.call(relationship, expiresIn);
         },
+        onUnmute: isMuted ? () => onMuteWithExpiry?.call(relationship, null) : null,
       ),
     );
   }
@@ -456,27 +448,47 @@ class RelationshipListTile extends StatelessWidget {
 class _ExpiryDurationSheet extends StatelessWidget {
   final String title;
   final bool showDegradeOption;
+  final bool showUnmuteOption;
+  final DateTime? expiresAt;
   final Function(String? expiresIn, int? degradeTo) onDurationSelected;
+  final VoidCallback? onUnmute;
 
   const _ExpiryDurationSheet({
     required this.title,
     this.showDegradeOption = true,
+    this.showUnmuteOption = false,
+    this.expiresAt,
     required this.onDurationSelected,
+    this.onUnmute,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    final remainingText = expiresAt != null
+        ? RelativeTime(context).format(expiresAt!)
+        : null;
+
+    return SheetScaffold(
+      titleText: title,
+      heightFactor: 0.6,
+      child: ListView(
+        shrinkWrap: true,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
+          if (showUnmuteOption && onUnmute != null)
+            ListTile(
+              leading: const Icon(Symbols.volume_up),
+              title: Text('unmuteUser'.tr()),
+              subtitle: Text(
+                remainingText != null
+                    ? 'muteExpiresIn'.tr(args: [remainingText])
+                    : 'mutePermanent'.tr(),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                onUnmute?.call();
+              },
             ),
-          ),
           ListTile(
             leading: const Icon(Symbols.schedule),
             title: Text('30 minutes'),
@@ -525,7 +537,6 @@ class _ExpiryDurationSheet extends StatelessWidget {
               onDurationSelected(null, null);
             },
           ),
-          const Gap(8),
         ],
       ),
     );
@@ -624,14 +635,23 @@ class RelationshipScreen extends HookConsumerWidget {
     ) async {
       try {
         final client = ref.read(apiClientProvider);
-        final data = <String, dynamic>{};
-        if (expiresIn != null) data['expires_in'] = expiresIn;
-        await client.post(
-          '/stargate/relationships/${relationship.relatedId}/mute',
-          data: data.isNotEmpty ? data : null,
-        );
+        if (relationship.status == -50) {
+          // Unmute
+          await client.post(
+            '/stargate/relationships/${relationship.relatedId}/unmute',
+          );
+          showSnackBar('userUnmuted'.tr());
+        } else {
+          // Mute
+          final data = <String, dynamic>{};
+          if (expiresIn != null) data['expires_in'] = expiresIn;
+          await client.post(
+            '/stargate/relationships/${relationship.relatedId}/mute',
+            data: data.isNotEmpty ? data : null,
+          );
+          showSnackBar('userMuted'.tr());
+        }
         relationshipNotifier.refresh();
-        showSnackBar('userMuted'.tr());
       } catch (err) {
         showErrorAlert(err);
       }
