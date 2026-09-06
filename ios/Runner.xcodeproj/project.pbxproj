@@ -237,9 +237,9 @@
 			path = SolianWidgetExtension;
 			sourceTree = "<group>";
 		};
-		7310A7D52EB10962002C0FD3 /* Solian Watch App */ = {
+		7310A7D52EB10962002C0FD3 /* SolianWatchApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Solian Watch App";
+			path = SolianWatchApp;
 			sourceTree = "<group>";
 		};
 		73268D272DEB012A0076E970 /* Services */ = {
@@ -416,7 +416,7 @@
 				73CDD67B2DEC00480059D95D /* SolianNotificationService */,
 				73C305CF2E0BE878009035B9 /* SolianShareExtension */,
 				73ACDFAE2E3D0E6100B63535 /* SolianBroadcastExtension */,
-				7310A7D52EB10962002C0FD3 /* Solian Watch App */,
+				7310A7D52EB10962002C0FD3 /* SolianWatchApp */,
 				7301DB062F08D99C008390F3 /* SolianWidgetExtension */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
@@ -519,7 +519,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				7310A7D52EB10962002C0FD3 /* Solian Watch App */,
+				7310A7D52EB10962002C0FD3 /* SolianWatchApp */,
 			);
 			name = "Solian Watch App";
 			productName = "WatchRunner Watch App";
