@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -8,6 +10,7 @@ import 'package:gap/gap.dart';
 import 'package:island_ui_foundation/island_ui_foundation.dart';
 import 'package:island/core/network.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/shared/widgets/alert.dart';
@@ -260,6 +263,70 @@ class SnPersonalityCredentialCreated {
       );
 }
 
+/// Mirrors `GET /personality/oauth/status`.
+class SnPersonalityOAuthStatus {
+  final String status; // "none" | "pending" | "connected"
+  final String accountId;
+  final String? scopes;
+  final DateTime? expiresAt;
+
+  const SnPersonalityOAuthStatus({
+    required this.status,
+    required this.accountId,
+    this.scopes,
+    this.expiresAt,
+  });
+
+  factory SnPersonalityOAuthStatus.fromJson(Map<String, dynamic> json) =>
+      SnPersonalityOAuthStatus(
+        status: json['status']?.toString() ?? 'none',
+        accountId: json['account_id']?.toString() ?? '',
+        scopes: json['scopes']?.toString(),
+        expiresAt: json['expires_at'] is String
+            ? DateTime.parse(json['expires_at'] as String)
+            : null,
+      );
+
+  bool get isConnected => status == 'connected';
+
+  bool get isPending => status == 'pending';
+}
+
+/// The user-facing portion of an OIDC device-code authorization. Mirrors
+/// `POST /personality/oauth/device`. The device_code is never exposed on the
+/// client.
+class SnPersonalityOAuthDeviceFlow {
+  final String userCode;
+  final String verificationUriComplete;
+  final int expiresIn;
+
+  const SnPersonalityOAuthDeviceFlow({
+    required this.userCode,
+    required this.verificationUriComplete,
+    required this.expiresIn,
+  });
+
+  factory SnPersonalityOAuthDeviceFlow.fromJson(Map<String, dynamic> json) =>
+      SnPersonalityOAuthDeviceFlow(
+        userCode: json['user_code'] as String,
+        verificationUriComplete: json['verification_uri_complete'] as String,
+        expiresIn: (json['expires_in'] as num?)?.toInt() ?? 0,
+      );
+}
+
+/// Abilities that act on the user's own Solar account (require OAuth).
+const kUserScopedAbilities = <String>{
+  'files',
+  'wallet',
+  'notifications',
+  'web_reader',
+  'relationships',
+  'search',
+  'stickers',
+  'surveys',
+  'leveling',
+};
+
 // ---------------------------------------------------------------------------
 // Providers
 // ---------------------------------------------------------------------------
@@ -312,6 +379,28 @@ Future<List<SnPersonalityCredential>> personalityCredentials(Ref ref) async {
     ];
   }
   return const [];
+}
+
+@riverpod
+Future<SnPersonalityOAuthStatus> personalityOAuthStatus(Ref ref) async {
+  final dio = ref.read(apiClientProvider);
+  final resp = await dio.get('/personality/oauth/status');
+  return SnPersonalityOAuthStatus.fromJson(resp.data as Map<String, dynamic>);
+}
+
+/// Starts an OIDC device-flow authorization for the account.
+Future<SnPersonalityOAuthDeviceFlow> startPersonalityOAuthDeviceFlow(
+  WidgetRef ref,
+) async {
+  final dio = ref.read(apiClientProvider);
+  final resp = await dio.post('/personality/oauth/device');
+  return SnPersonalityOAuthDeviceFlow.fromJson(resp.data as Map<String, dynamic>);
+}
+
+/// Revokes the account's OAuth session.
+Future<void> revokePersonalityOAuth(WidgetRef ref) async {
+  final dio = ref.read(apiClientProvider);
+  await dio.delete('/personality/oauth');
 }
 
 // ---------------------------------------------------------------------------
@@ -443,13 +532,19 @@ class _CatalogTab extends ConsumerWidget {
         children: [
           _SectionTitle('aiConsoleAgents'),
           agents.when(
-            data: (list) => Column(
-              spacing: 8,
-              children: [
-                for (final a in list) _AgentCard(agent: a),
-                if (list.isEmpty) const _EmptyNote(),
-              ],
-            ),
+            data: (list) {
+              final hasUserScoped = list.any(
+                (a) => a.abilities.any(kUserScopedAbilities.contains),
+              );
+              return Column(
+                spacing: 8,
+                children: [
+                  if (hasUserScoped) const _AccountOAuthBlock(),
+                  for (final a in list) _AgentCard(agent: a),
+                  if (list.isEmpty) const _EmptyNote(),
+                ],
+              );
+            },
             error: (e, _) => ResponseErrorWidget(
               error: e,
               onRetry: () => ref.invalidate(personalityAgentsProvider),
@@ -477,12 +572,12 @@ class _CatalogTab extends ConsumerWidget {
   }
 }
 
-class _AgentCard extends StatelessWidget {
+class _AgentCard extends ConsumerWidget {
   final SnPersonalityAgent agent;
   const _AgentCard({required this.agent});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Card(
       margin: EdgeInsets.zero,
@@ -548,6 +643,306 @@ class _AgentCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The account-level OAuth connection row. One session covers every agent, so
+/// it's shown once at the top of the catalog (only when some agent declares a
+/// user-scoped ability like files/wallet, since that is when the token is used).
+class _AccountOAuthBlock extends HookConsumerWidget {
+  const _AccountOAuthBlock();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final status = ref.watch(personalityOAuthStatusProvider);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: status.when(
+        data: (s) {
+          final connected = s.isConnected;
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  connected ? Symbols.cloud_done : Symbols.cloud_off,
+                  color: connected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline,
+                ),
+                const Gap(8),
+                Expanded(
+                  child: Text(
+                    (connected
+                            ? 'aiConsoleOAuthConnected'
+                            : 'aiConsoleOAuthNotConnected')
+                        .tr(),
+                    style: theme.textTheme.labelMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (connected) {
+                      _disconnect(context, ref);
+                    } else {
+                      _connect(context, ref);
+                    }
+                  },
+                  child: Text(
+                    (connected
+                            ? 'aiConsoleOAuthDisconnect'
+                            : 'aiConsoleOAuthConnect')
+                        .tr(),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        error: (e, _) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Symbols.cloud_off, size: 18, color: theme.colorScheme.outline),
+              const Gap(8),
+              Expanded(
+                child: Text(
+                  'aiConsoleOAuthNotConnected'.tr(),
+                  style: theme.textTheme.labelMedium,
+                ),
+              ),
+              TextButton(
+                onPressed: () => _connect(context, ref),
+                child: Text('aiConsoleOAuthConnect'.tr()),
+              ),
+            ],
+          ),
+        ),
+        loading: () => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const Gap(8),
+              Text(
+                'aiConsoleOAuthChecking'.tr(),
+                style: theme.textTheme.labelMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _connect(BuildContext context, WidgetRef ref) async {
+    try {
+      final flow = await startPersonalityOAuthDeviceFlow(ref);
+      if (!context.mounted) return;
+      ref.invalidate(personalityOAuthStatusProvider);
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => _OAuthConnectSheet(flow: flow),
+      );
+    } catch (e) {
+      if (context.mounted) showErrorAlert(e);
+    }
+    if (context.mounted) {
+      ref.invalidate(personalityOAuthStatusProvider);
+    }
+  }
+
+  Future<void> _disconnect(BuildContext context, WidgetRef ref) async {
+    final confirm = await showConfirmAlert(
+      'aiConsoleOAuthRevokeConfirm'.tr(),
+      'aiConsoleOAuthDisconnect'.tr(),
+      isDanger: true,
+    );
+    if (!confirm || !context.mounted) return;
+    showLoadingModal(context);
+    try {
+      await revokePersonalityOAuth(ref);
+      ref.invalidate(personalityOAuthStatusProvider);
+      if (context.mounted) showSnackBar('settingsSaved'.tr());
+    } catch (e) {
+      if (context.mounted) showErrorAlert(e);
+    } finally {
+      if (context.mounted) hideLoadingModal(context);
+    }
+  }
+}
+
+/// Shows the user_code + verification page for the account OIDC device flow.
+/// Polls the status endpoint until the user authorizes, then closes.
+class _OAuthConnectSheet extends HookConsumerWidget {
+  final SnPersonalityOAuthDeviceFlow flow;
+  const _OAuthConnectSheet({required this.flow});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final status = ref.watch(personalityOAuthStatusProvider);
+    final launched = useState(false);
+
+    // Poll on a timer while the sheet stays open so it auto-closes when the
+    // user authorizes in the browser. Also kick a refresh on open.
+    useEffect(() {
+      ref.invalidate(personalityOAuthStatusProvider);
+      final timer = Timer.periodic(
+        const Duration(seconds: 3),
+        (_) => ref.invalidate(personalityOAuthStatusProvider),
+      );
+      return timer.cancel;
+    }, []);
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 12,
+        children: [
+          Text(
+            'aiConsoleOAuthConnectBody'.tr(),
+            style: theme.textTheme.bodyMedium,
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 4,
+              children: [
+                Text(
+                  'aiConsoleOAuthUserCode'.tr(),
+                  style: theme.textTheme.labelSmall,
+                ),
+                SelectableText(
+                  flow.userCode,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          status.when(
+            data: (s) {
+              if (s.isConnected) {
+                // Auto-close once the flow completes.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) Navigator.of(context).maybePop();
+                });
+                return Row(
+                  children: [
+                    Icon(
+                      Symbols.check_circle,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const Gap(8),
+                    Expanded(
+                      child: Text(
+                        'aiConsoleOAuthConnected'.tr(),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const Gap(8),
+                  Expanded(
+                    child: Text(
+                      'aiConsoleOAuthWaiting'.tr(),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              );
+            },
+            error: (e, _) => Row(
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const Gap(8),
+                Expanded(
+                  child: Text(
+                    'aiConsoleOAuthWaiting'.tr(),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+            loading: () => Row(
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const Gap(8),
+                Expanded(
+                  child: Text(
+                    'aiConsoleOAuthWaiting'.tr(),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Gap(4),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: launched.value
+                      ? null
+                      : () {
+                          launched.value = true;
+                          launchUrl(
+                            Uri.parse(flow.verificationUriComplete),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                  icon: const Icon(Symbols.open_in_new),
+                  label: Text('aiConsoleOAuthOpenPage'.tr()),
+                ),
+              ),
+              const Gap(8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: Text('close'.tr()),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
